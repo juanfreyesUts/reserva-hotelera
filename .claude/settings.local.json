@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(node --check server.js)",
+      "Bash(node --check src/routes/auth.js)",
+      "Bash(node --check src/routes/hotels.js)",
+      "Bash(node --check src/routes/rooms.js)",
+      "Bash(node --check src/routes/bookings.js)",
+      "Bash(npx vite:*)"
+    ]
+  }
+}

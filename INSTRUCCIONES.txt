@@ -1,0 +1,82 @@
+=============================================
+  StayHub - Hotel Booking App
+  Bucaramanga, Colombia
+=============================================
+
+REQUISITOS PREVIOS:
+  - Node.js 18+
+  - SQL Server (localhost, Windows Authentication)
+  - SQL Server Browser corriendo
+
+PASO 1: Configurar base de datos
+  cd backend
+  npm install
+  npm run setup
+
+  Esto crea la DB, tablas y seed data con contraseñas hasheadas.
+
+PASO 2: Iniciar backend
+  cd backend
+  npm run dev
+
+  API disponible en: http://localhost:5000
+
+PASO 3: Iniciar frontend
+  cd frontend
+  npm install
+  npm run dev
+
+  App disponible en: http://localhost:5173
+
+CREDENCIALES DE ACCESO:
+  Admin:  admin@hoteleria.com  /  Admin123!
+  User 1: carlos@email.com     /  User123!
+  User 2: maria@email.com      /  User123!
+  User 3: juan@email.com       /  User123!
+
+ESTRUCTURA:
+  backend/src/config/db.js          - Conexión SQL Server (Windows Auth)
+  backend/src/middleware/auth.js    - JWT middleware
+  backend/src/routes/auth.js        - Login, register, /me
+  backend/src/routes/hotels.js      - Búsqueda y detalle de hoteles
+  backend/src/routes/rooms.js       - Habitaciones con disponibilidad
+  backend/src/routes/bookings.js    - Crear/ver/cancelar reservas
+  backend/src/routes/admin.js       - CRUD admin completo
+  backend/src/scripts/setup.js      - Script de inicialización DB
+
+  frontend/src/pages/Home.jsx           - Página principal con hero
+  frontend/src/pages/SearchResults.jsx  - Resultados con filtros
+  frontend/src/pages/HotelDetail.jsx    - Detalle hotel + habitaciones
+  frontend/src/pages/Booking.jsx        - Formulario de reserva
+  frontend/src/pages/BookingConfirmation.jsx - Confirmación
+  frontend/src/pages/Login.jsx          - Login
+  frontend/src/pages/Register.jsx       - Registro
+  frontend/src/pages/Dashboard.jsx      - Mis reservas
+  frontend/src/pages/Admin.jsx          - Panel admin completo
+
+API ENDPOINTS:
+  POST   /api/auth/register
+  POST   /api/auth/login
+  GET    /api/auth/me
+
+  GET    /api/hotels?city=&stars=&minPrice=&maxPrice=&sort=
+  GET    /api/hotels/:id
+
+  GET    /api/rooms/hotel/:id?checkin=&checkout=
+  GET    /api/rooms/:id
+
+  POST   /api/bookings
+  GET    /api/bookings/my
+  PUT    /api/bookings/:id/cancel
+
+  GET    /api/admin/hotels
+  POST   /api/admin/hotels
+  PUT    /api/admin/hotels/:id
+  DELETE /api/admin/hotels/:id
+  GET    /api/admin/rooms
+  POST   /api/admin/rooms
+  PUT    /api/admin/rooms/:id
+  DELETE /api/admin/rooms/:id
+  GET    /api/admin/bookings
+  PUT    /api/admin/bookings/:id/status
+=============================================
