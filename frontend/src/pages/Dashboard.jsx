@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { bookingsApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { formatDate } from '../utils/dateFormat';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(price);
@@ -157,7 +158,7 @@ export default function Dashboard() {
                           </div>
                           <p className="text-sm text-gray-500">{booking.room_name} · {booking.room_type}</p>
                           <p className="text-xs text-gray-400 mt-0.5">
-                            Reserva #{booking.id} · {new Date(booking.created_at).toLocaleDateString('es-CO')}
+                            Reserva #{booking.id} · {formatDate(booking.created_at)}
                           </p>
                         </div>
                         <div className="text-right">
@@ -172,7 +173,7 @@ export default function Dashboard() {
                             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            {booking.check_in} → {booking.check_out}
+                            {formatDate(booking.check_in)} → {formatDate(booking.check_out)}
                           </span>
                           <span className="flex items-center gap-1">
                             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

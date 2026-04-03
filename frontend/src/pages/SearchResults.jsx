@@ -4,6 +4,7 @@ import HotelCard from '../components/HotelCard';
 import FilterSidebar from '../components/FilterSidebar';
 import SearchBar from '../components/SearchBar';
 import { hotelsApi } from '../services/api';
+import { formatDate } from '../utils/dateFormat';
 
 export default function SearchResults() {
   const [searchParams] = useSearchParams();
@@ -84,7 +85,7 @@ export default function SearchResults() {
             </h1>
             {nights && nights > 0 && (
               <p className="text-sm text-gray-500">
-                {checkin} — {checkout} · {nights} {nights === 1 ? 'noche' : 'noches'} · {guests} {parseInt(guests) === 1 ? 'huésped' : 'huéspedes'}
+                {formatDate(checkin)} — {formatDate(checkout)} · {nights} {nights === 1 ? 'noche' : 'noches'} · {guests} {parseInt(guests) === 1 ? 'huésped' : 'huéspedes'}
               </p>
             )}
           </div>

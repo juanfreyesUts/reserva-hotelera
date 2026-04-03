@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatThousands, parseThousands } from '../utils/numberFormat';
 
 export default function FilterSidebar({ filters, onChange }) {
   const { stars = [], minPrice = '', maxPrice = '', amenities: selectedAmenities = [] } = filters;
@@ -62,9 +63,10 @@ export default function FilterSidebar({ filters, onChange }) {
           <div className="flex-1">
             <label className="text-xs text-gray-500 mb-1 block">Mínimo (COP)</label>
             <input
-              type="number"
-              value={minPrice}
-              onChange={e => onChange({ ...filters, minPrice: e.target.value })}
+              type="text"
+              inputMode="numeric"
+              value={formatThousands(minPrice)}
+              onChange={e => onChange({ ...filters, minPrice: parseThousands(e.target.value) })}
               placeholder="0"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
@@ -73,9 +75,10 @@ export default function FilterSidebar({ filters, onChange }) {
           <div className="flex-1">
             <label className="text-xs text-gray-500 mb-1 block">Máximo (COP)</label>
             <input
-              type="number"
-              value={maxPrice}
-              onChange={e => onChange({ ...filters, maxPrice: e.target.value })}
+              type="text"
+              inputMode="numeric"
+              value={formatThousands(maxPrice)}
+              onChange={e => onChange({ ...filters, maxPrice: parseThousands(e.target.value) })}
               placeholder="1.000.000"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />

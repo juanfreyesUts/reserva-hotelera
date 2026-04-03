@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import RoomCard from '../components/RoomCard';
+import SearchBar from '../components/SearchBar';
 import { hotelsApi, roomsApi } from '../services/api';
+import { formatDate } from '../utils/dateFormat';
 
 function Stars({ count }) {
   return (
@@ -35,7 +37,7 @@ const AMENITY_ICONS = {
 
 export default function HotelDetail() {
   const { id } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [hotel, setHotel] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [loadingHotel, setLoadingHotel] = useState(true);
@@ -68,6 +70,8 @@ export default function HotelDetail() {
   const nights = checkin && checkout
     ? Math.ceil((new Date(checkout) - new Date(checkin)) / 86400000)
     : null;
+
+  const filteredRooms = rooms.filter(room => room.capacity >= Number(guests));
 
   if (loadingHotel) {
     return (
@@ -143,13 +147,6 @@ export default function HotelDetail() {
                 </div>
               )}
             </div>
-            {nights && nights > 0 && (
-              <div className="text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
-                <span className="font-medium">{checkin}</span> → <span className="font-medium">{checkout}</span>
-                <span className="ml-2 text-indigo-600 font-semibold">{nights} {nights === 1 ? 'noche' : 'noches'}</span>
-                <span className="ml-2">· {guests} {parseInt(guests) === 1 ? 'huésped' : 'huéspedes'}</span>
-              </div>
-            )}
           </div>
 
           {/* Description */}
@@ -158,6 +155,19 @@ export default function HotelDetail() {
               <p className="text-gray-600 leading-relaxed">{hotel.description}</p>
             </div>
           )}
+        </div>
+
+        {/* SearchBar */}
+        <div className="mb-6">
+          <SearchBar
+            compact={true}
+            isDestino={false}
+            titleSearch={'Aplicar Cambios'}
+            initialValues={{ checkin, checkout, guests }}
+            onFilter={({ checkin, checkout, guests }) =>
+              setSearchParams({ checkin, checkout, guests })
+            }
+          />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -174,20 +184,20 @@ export default function HotelDetail() {
                   <div key={i} className="bg-white rounded-xl border border-gray-200 h-36 animate-pulse" />
                 ))}
               </div>
-            ) : rooms.length === 0 ? (
+            ) : filteredRooms.length === 0 ? (
               <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
                 <div className="text-4xl mb-3">😔</div>
                 <p className="text-gray-600 font-semibold">No hay habitaciones disponibles</p>
                 {checkin && checkout && (
                   <p className="text-gray-400 text-sm mt-1">
-                    Para las fechas {checkin} - {checkout}.
-                    <br />Intenta con otras fechas.
+                    Para las fechas {formatDate(checkin)} - {formatDate(checkout)} y {guests} huéspedes.
+                    <br />Intenta con otras fechas o menos huéspedes.
                   </p>
                 )}
               </div>
             ) : (
               <div className="space-y-4">
-                {rooms.map(room => (
+                {filteredRooms.map(room => (
                   <RoomCard
                     key={room.id}
                     room={room}

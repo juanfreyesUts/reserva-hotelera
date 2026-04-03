@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { roomsApi, bookingsApi, hotelsApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useAlert } from '../context/AlertContext';
+import { formatDate } from '../utils/dateFormat';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(price);
@@ -11,6 +13,7 @@ export default function Booking() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { confirm, success, error: showError } = useAlert();
 
   const roomId = searchParams.get('roomId');
   const hotelId = searchParams.get('hotelId');
@@ -67,6 +70,12 @@ export default function Booking() {
       return;
     }
 
+    const ok = await confirm(
+      `¿Confirmas la reserva de "${room?.name}" en ${hotel?.name} del ${formatDate(checkin)} al ${formatDate(checkout)} por ${formatPrice(totalPrice)}?`,
+      'Confirmar reserva'
+    );
+    if (!ok) return;
+
     setSubmitting(true);
     try {
       const res = await bookingsApi.create({
@@ -81,18 +90,14 @@ export default function Booking() {
         special_requests: form.special_requests
       });
 
+      await success('Tu reserva fue creada exitosamente.', 'Reserva confirmada');
       navigate('/booking/confirmation', {
-        state: {
-          booking: res.data,
-          room,
-          hotel,
-          nights,
-          checkin,
-          checkout
-        }
+        state: { booking: res.data, room, hotel, nights, checkin, checkout }
       });
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al crear la reserva. Inténtalo nuevamente.');
+      const msg = err.response?.data?.error || 'Error al crear la reserva. Inténtalo nuevamente.';
+      setError(msg);
+      await showError(msg, 'No se pudo crear la reserva');
     } finally {
       setSubmitting(false);
     }
@@ -204,11 +209,11 @@ export default function Booking() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
                   <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Llegada</p>
-                  <p className="font-bold text-gray-800 mt-1">{checkin || 'No especificada'}</p>
+                  <p className="font-bold text-gray-800 mt-1">{formatDate(checkin) || 'No especificada'}</p>
                 </div>
                 <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
                   <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Salida</p>
-                  <p className="font-bold text-gray-800 mt-1">{checkout || 'No especificada'}</p>
+                  <p className="font-bold text-gray-800 mt-1">{formatDate(checkout) || 'No especificada'}</p>
                 </div>
               </div>
               {nights > 0 && (

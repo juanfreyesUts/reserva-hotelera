@@ -1,40 +1,53 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAlert } from '../context/AlertContext';
 
-export default function SearchBar({ initialValues = {}, compact = false }) {
+export default function SearchBar({ initialValues = {}, compact = false, isDestino = true, titleSearch = 'Buscar Hoteles', onFilter }) {
   const navigate = useNavigate();
+  const { error: showError } = useAlert();
   const today = new Date().toISOString().split('T')[0];
   const tomorrow = new Date(Date.now() + 86400000).toISOString().split('T')[0];
 
   const [city, setCity] = useState(initialValues.city || 'Bucaramanga');
-  const [checkin, setCheckin] = useState(initialValues.checkin || today);
-  const [checkout, setCheckout] = useState(initialValues.checkout || tomorrow);
+  const [checkin, setCheckin] = useState(compact ? initialValues.checkin : today);
+  const [checkout, setCheckout] = useState(compact ? initialValues.checkout : tomorrow);
   const [guests, setGuests] = useState(initialValues.guests || '2');
 
-  const handleSearch = (e) => {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    const params = new URLSearchParams({ city, checkin, checkout, guests });
-    navigate(`/search?${params.toString()}`);
+    if (isDestino) {
+      const params = new URLSearchParams({ city, checkin, checkout, guests });
+      navigate(`/search?${params.toString()}`);
+    } else if (onFilter) {
+      if (!checkin || !checkout) {
+        await showError('Selecciona las fechas de llegada y salida para filtrar disponibilidad.', 'Fechas requeridas');
+        return;
+      }
+      onFilter({ checkin, checkout, guests });
+    }
   };
 
   if (compact) {
     return (
-      <form onSubmit={handleSearch} className="flex flex-wrap gap-2 items-end bg-white p-3 rounded-xl shadow-sm border border-gray-200">
-        <div className="flex-1 min-w-[140px]">
-          <label className="block text-xs text-gray-500 mb-1">Destino</label>
-          <input
-            type="text"
-            value={city}
-            onChange={e => setCity(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            placeholder="Ciudad o hotel"
-          />
-        </div>
+      <form onSubmit={handleSearch} className={`flex flex-wrap gap-2 items-end bg-white p-3 rounded-xl shadow-sm border border-gray-200 ${!isDestino ? 'w-fit' : 'w-full'}`}>
+        {isDestino && (
+          <div className="flex-1 min-w-[140px]">
+            <label className="block text-xs text-gray-500 mb-1">Destino</label>
+            <input
+              type="text"
+              value={city}
+              onChange={e => setCity(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              placeholder="Ciudad o hotel"
+            />
+          </div>
+        )}
         <div className="min-w-[130px]">
           <label className="block text-xs text-gray-500 mb-1">Entrada</label>
           <input
             type="date"
             value={checkin}
+            required
             min={today}
             onChange={e => setCheckin(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -45,7 +58,8 @@ export default function SearchBar({ initialValues = {}, compact = false }) {
           <input
             type="date"
             value={checkout}
-            min={checkin || today}
+            required
+            min={today}
             onChange={e => setCheckout(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
@@ -54,14 +68,15 @@ export default function SearchBar({ initialValues = {}, compact = false }) {
           <label className="block text-xs text-gray-500 mb-1">Huéspedes</label>
           <select
             value={guests}
+            required
             onChange={e => setGuests(e.target.value)}
             className="w-full border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            {[1,2,3,4,5,6].map(n => <option key={n} value={n}>{n} {n === 1 ? 'persona' : 'personas'}</option>)}
+            {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} {n === 1 ? 'persona' : 'personas'}</option>)}
           </select>
         </div>
         <button type="submit" className="btn-primary text-sm py-1.5 px-4 whitespace-nowrap">
-          Buscar
+          {titleSearch}
         </button>
       </form>
     );
@@ -145,7 +160,7 @@ export default function SearchBar({ initialValues = {}, compact = false }) {
               onChange={e => setGuests(e.target.value)}
               className="w-full text-gray-800 text-sm font-medium focus:outline-none bg-transparent"
             >
-              {[1,2,3,4,5,6].map(n => (
+              {[1, 2, 3, 4, 5, 6].map(n => (
                 <option key={n} value={n}>{n} {n === 1 ? 'persona' : 'personas'}</option>
               ))}
             </select>
@@ -158,7 +173,7 @@ export default function SearchBar({ initialValues = {}, compact = false }) {
           type="submit"
           className="w-full md:w-auto bg-indigo-700 hover:bg-indigo-800 text-white font-bold py-3 px-12 rounded-xl text-lg transition-colors shadow-lg"
         >
-          Buscar hoteles
+          {titleSearch}
         </button>
       </div>
     </form>

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
+import { formatDate } from '../utils/dateFormat';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(price);
@@ -65,12 +66,12 @@ export default function BookingConfirmation() {
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-gray-50 rounded-xl p-4">
                 <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Check-in</p>
-                <p className="font-bold text-gray-800">{checkin}</p>
+                <p className="font-bold text-gray-800">{formatDate(checkin)}</p>
                 <p className="text-xs text-gray-500 mt-0.5">desde las 3:00 pm</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4">
                 <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Check-out</p>
-                <p className="font-bold text-gray-800">{checkout}</p>
+                <p className="font-bold text-gray-800">{formatDate(checkout)}</p>
                 <p className="text-xs text-gray-500 mt-0.5">hasta las 12:00 pm</p>
               </div>
               <div className="bg-gray-50 rounded-xl p-4">

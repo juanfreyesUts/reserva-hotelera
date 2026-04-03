@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useAlert } from '../context/AlertContext';
 
 const TYPE_LABELS = {
   single: 'Individual',
@@ -22,9 +23,14 @@ export function formatPrice(price) {
 
 export default function RoomCard({ room, searchParams = {} }) {
   const { user } = useAuth();
+  const { error: showError } = useAlert();
   const navigate = useNavigate();
 
-  const handleBook = () => {
+  const handleBook = async () => {
+    if (!searchParams.checkin || !searchParams.checkout) {
+      await showError('Selecciona las fechas de llegada y salida antes de reservar.', 'Fechas requeridas');
+      return;
+    }
     if (!user) {
       const params = new URLSearchParams({ redirect: `/booking?roomId=${room.id}&...` });
       navigate(`/login?${params.toString()}`);

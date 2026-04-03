@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { adminApi } from '../services/api';
+import { formatDate } from '../utils/dateFormat';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(price);
@@ -535,7 +536,7 @@ export default function Admin() {
                               <p className="text-xs text-gray-400">{b.room_name}</p>
                             </td>
                             <td className="px-4 py-3 text-xs text-gray-600">
-                              {b.check_in} → {b.check_out}
+                              {formatDate(b.check_in)} → {formatDate(b.check_out)}
                             </td>
                             <td className="px-4 py-3 text-right font-semibold text-gray-800">{formatPrice(b.total_price)}</td>
                             <td className="px-4 py-3 text-center"><StatusBadge status={b.status} /></td>
