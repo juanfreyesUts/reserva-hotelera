@@ -1,0 +1,55 @@
+/**
+ * Country phone codes with flags and dial codes.
+ * Colombia is always first; the rest are sorted alphabetically (es).
+ * Default country: Colombia (CO).
+ */
+export const PHONE_CODES = [
+  { code: 'CO', dialCode: '+57',  flag: '🇨🇴', name: 'Colombia' },       // siempre primero
+  { code: 'DE', dialCode: '+49',  flag: '🇩🇪', name: 'Alemania' },
+  { code: 'SA', dialCode: '+966', flag: '🇸🇦', name: 'Arabia Saudita' },
+  { code: 'AR', dialCode: '+54',  flag: '🇦🇷', name: 'Argentina' },
+  { code: 'AU', dialCode: '+61',  flag: '🇦🇺', name: 'Australia' },
+  { code: 'BE', dialCode: '+32',  flag: '🇧🇪', name: 'Bélgica' },
+  { code: 'BO', dialCode: '+591', flag: '🇧🇴', name: 'Bolivia' },
+  { code: 'BR', dialCode: '+55',  flag: '🇧🇷', name: 'Brasil' },
+  { code: 'CA', dialCode: '+1',   flag: '🇨🇦', name: 'Canadá' },
+  { code: 'CL', dialCode: '+56',  flag: '🇨🇱', name: 'Chile' },
+  { code: 'CN', dialCode: '+86',  flag: '🇨🇳', name: 'China' },
+  { code: 'KR', dialCode: '+82',  flag: '🇰🇷', name: 'Corea del Sur' },
+  { code: 'CR', dialCode: '+506', flag: '🇨🇷', name: 'Costa Rica' },
+  { code: 'CU', dialCode: '+53',  flag: '🇨🇺', name: 'Cuba' },
+  { code: 'DK', dialCode: '+45',  flag: '🇩🇰', name: 'Dinamarca' },
+  { code: 'EC', dialCode: '+593', flag: '🇪🇨', name: 'Ecuador' },
+  { code: 'SV', dialCode: '+503', flag: '🇸🇻', name: 'El Salvador' },
+  { code: 'AE', dialCode: '+971', flag: '🇦🇪', name: 'Emiratos Árabes' },
+  { code: 'ES', dialCode: '+34',  flag: '🇪🇸', name: 'España' },
+  { code: 'US', dialCode: '+1',   flag: '🇺🇸', name: 'Estados Unidos' },
+  { code: 'FR', dialCode: '+33',  flag: '🇫🇷', name: 'Francia' },
+  { code: 'GT', dialCode: '+502', flag: '🇬🇹', name: 'Guatemala' },
+  { code: 'HN', dialCode: '+504', flag: '🇭🇳', name: 'Honduras' },
+  { code: 'IN', dialCode: '+91',  flag: '🇮🇳', name: 'India' },
+  { code: 'IT', dialCode: '+39',  flag: '🇮🇹', name: 'Italia' },
+  { code: 'JP', dialCode: '+81',  flag: '🇯🇵', name: 'Japón' },
+  { code: 'MX', dialCode: '+52',  flag: '🇲🇽', name: 'México' },
+  { code: 'NI', dialCode: '+505', flag: '🇳🇮', name: 'Nicaragua' },
+  { code: 'NG', dialCode: '+234', flag: '🇳🇬', name: 'Nigeria' },
+  { code: 'NO', dialCode: '+47',  flag: '🇳🇴', name: 'Noruega' },
+  { code: 'NL', dialCode: '+31',  flag: '🇳🇱', name: 'Países Bajos' },
+  { code: 'PA', dialCode: '+507', flag: '🇵🇦', name: 'Panamá' },
+  { code: 'PY', dialCode: '+595', flag: '🇵🇾', name: 'Paraguay' },
+  { code: 'PE', dialCode: '+51',  flag: '🇵🇪', name: 'Perú' },
+  { code: 'PL', dialCode: '+48',  flag: '🇵🇱', name: 'Polonia' },
+  { code: 'PT', dialCode: '+351', flag: '🇵🇹', name: 'Portugal' },
+  { code: 'PR', dialCode: '+1',   flag: '🇵🇷', name: 'Puerto Rico' },
+  { code: 'GB', dialCode: '+44',  flag: '🇬🇧', name: 'Reino Unido' },
+  { code: 'DO', dialCode: '+1',   flag: '🇩🇴', name: 'Rep. Dominicana' },
+  { code: 'RU', dialCode: '+7',   flag: '🇷🇺', name: 'Rusia' },
+  { code: 'ZA', dialCode: '+27',  flag: '🇿🇦', name: 'Sudáfrica' },
+  { code: 'SE', dialCode: '+46',  flag: '🇸🇪', name: 'Suecia' },
+  { code: 'CH', dialCode: '+41',  flag: '🇨🇭', name: 'Suiza' },
+  { code: 'TR', dialCode: '+90',  flag: '🇹🇷', name: 'Turquía' },
+  { code: 'UY', dialCode: '+598', flag: '🇺🇾', name: 'Uruguay' },
+  { code: 'VE', dialCode: '+58',  flag: '🇻🇪', name: 'Venezuela' },
+];
+
+export const DEFAULT_COUNTRY = PHONE_CODES[0]; // Colombia

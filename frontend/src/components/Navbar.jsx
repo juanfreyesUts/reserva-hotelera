@@ -1,19 +1,34 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import AlertModal from './AlertModal';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = () => { setMenuOpen(false); setShowConfirm(true); };
+
+  const confirmLogout = () => {
     logout();
     navigate('/');
     setMenuOpen(false);
+    setShowConfirm(false);
   };
 
   return (
+    <>
+    {showConfirm && (
+      <AlertModal
+        type="confirm"
+        title="Cerrar sesión"
+        message="¿Estás seguro de que deseas cerrar sesión?"
+        onConfirm={confirmLogout}
+        onCancel={() => setShowConfirm(false)}
+      />
+    )}
     <nav className="bg-indigo-700 shadow-lg sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
@@ -143,5 +158,6 @@ export default function Navbar() {
         <div className="fixed inset-0 z-[-1]" onClick={() => setMenuOpen(false)} />
       )}
     </nav>
+    </>
   );
 }

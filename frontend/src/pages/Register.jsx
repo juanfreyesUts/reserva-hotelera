@@ -1,33 +1,50 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { DEFAULT_COUNTRY } from '../utils/phoneCodes';
+import {
+  onlyDigits,
+  validatePassword,
+  validatePasswordMatch,
+  passwordStrength,
+} from '../utils/validations';
+import PhoneCountrySelect from '../components/PhoneCountrySelect';
+import AlertModal from '../components/AlertModal';
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '', phone: '' });
+  const [country, setCountry] = useState(DEFAULT_COUNTRY);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleChange = (e) => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+
+  const handlePhoneChange = (e) => {
+    setForm(prev => ({ ...prev, phone: onlyDigits(e.target.value) }));
+  };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (form.password.length < 6) {
-      return setError('La contraseña debe tener al menos 6 caracteres.');
-    }
-    if (form.password !== form.confirm) {
-      return setError('Las contraseñas no coinciden.');
-    }
+    const passwordError = validatePassword(form.password);
+    if (passwordError) return setError(passwordError);
+
+    const matchError = validatePasswordMatch(form.password, form.confirm);
+    if (matchError) return setError(matchError);
+
+    const fullPhone = form.phone ? `${country.dialCode}${form.phone}` : '';
 
     setLoading(true);
     try {
-      await register(form.name, form.email, form.password, form.phone);
-      navigate('/', { replace: true });
+      await register(form.name, form.email, form.password, fullPhone);
+      setShowSuccess(true);
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrarse. Inténtalo nuevamente.');
     } finally {
@@ -35,22 +52,18 @@ export default function Register() {
     }
   };
 
-  const passwordStrength = () => {
-    const p = form.password;
-    if (!p) return null;
-    let score = 0;
-    if (p.length >= 8) score++;
-    if (/[A-Z]/.test(p)) score++;
-    if (/[0-9]/.test(p)) score++;
-    if (/[^A-Za-z0-9]/.test(p)) score++;
-    if (score <= 1) return { label: 'Débil', color: 'bg-red-500', width: '25%' };
-    if (score === 2) return { label: 'Regular', color: 'bg-yellow-500', width: '50%' };
-    if (score === 3) return { label: 'Buena', color: 'bg-blue-500', width: '75%' };
-    return { label: 'Fuerte', color: 'bg-green-500', width: '100%' };
-  };
-  const strength = passwordStrength();
+  const strength = passwordStrength(form.password);
 
   return (
+    <>
+    {showSuccess && (
+      <AlertModal
+        type="success"
+        title="¡Cuenta creada!"
+        message={`Bienvenido, ${form.name.split(' ')[0]}. Tu cuenta ha sido creada exitosamente.`}
+        onConfirm={() => navigate('/', { replace: true })}
+      />
+    )}
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         {/* Logo */}
@@ -97,17 +110,22 @@ export default function Register() {
               />
             </div>
 
+            {/* Teléfono con selector de país */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-              <input
-                type="tel"
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                autoComplete="tel"
-                className="input-field"
-                placeholder="300 123 4567"
-              />
+              <div className="flex focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-0 rounded-lg">
+                <PhoneCountrySelect value={country} onChange={setCountry} />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handlePhoneChange}
+                  autoComplete="tel"
+                  inputMode="numeric"
+                  className="flex-1 min-w-0 border border-l-0 border-gray-300 rounded-r-lg px-3 py-2 text-sm focus:outline-none"
+                  placeholder="300 123 4567"
+                />
+              </div>
             </div>
 
             <div>
@@ -134,7 +152,6 @@ export default function Register() {
                   </svg>
                 </button>
               </div>
-              {/* Password strength */}
               {strength && (
                 <div className="mt-1.5">
                   <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
@@ -197,5 +214,6 @@ export default function Register() {
         </div>
       </div>
     </div>
+    </>
   );
 }

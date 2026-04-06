@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import HotelCard from '../components/HotelCard';
 import { hotelsApi } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const FEATURES = [
   { icon: '🏷️', title: 'Mejor precio garantizado', desc: 'Sin costos ocultos, siempre el mejor precio disponible.' },
@@ -19,6 +20,7 @@ const NEIGHBORHOODS = [
 ];
 
 export default function Home() {
+  const { user } = useAuth();
   const [featuredHotels, setFeaturedHotels] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -148,20 +150,22 @@ export default function Home() {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-gradient-to-r from-indigo-700 to-indigo-900 text-white py-14">
-        <div className="max-w-3xl mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-3">¿Listo para tu próxima aventura?</h2>
-          <p className="text-indigo-200 mb-7 text-lg">Crea tu cuenta y gestiona todas tus reservas en un solo lugar.</p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link to="/register" className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold py-3 px-8 rounded-xl transition-colors">
-              Crear cuenta gratis
-            </Link>
-            <Link to="/search?city=Bucaramanga" className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-xl border border-white/30 transition-colors">
-              Explorar hoteles
-            </Link>
+      {!user &&
+        <section className="bg-gradient-to-r from-indigo-700 to-indigo-900 text-white py-14">
+          <div className="max-w-3xl mx-auto px-4 text-center">
+            <h2 className="text-3xl font-bold mb-3">¿Listo para tu próxima aventura?</h2>
+            <p className="text-indigo-200 mb-7 text-lg">Crea tu cuenta y gestiona todas tus reservas en un solo lugar.</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link to="/register" className="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-bold py-3 px-8 rounded-xl transition-colors">
+                Crear cuenta gratis
+              </Link>
+              <Link to="/search?city=Bucaramanga" className="bg-white/10 hover:bg-white/20 text-white font-bold py-3 px-8 rounded-xl border border-white/30 transition-colors">
+                Explorar hoteles
+              </Link>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      }
     </div>
   );
 }
