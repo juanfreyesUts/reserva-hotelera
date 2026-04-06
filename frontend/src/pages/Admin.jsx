@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { adminApi } from '../services/api';
 import { formatDate } from '../utils/dateFormat';
+import AlertModal from '../components/AlertModal';
 
 function formatPrice(price) {
   return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(price);
@@ -234,6 +235,10 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // { type: 'hotel'|'room', item: null|{} }
   const [deleting, setDeleting] = useState(null);
+  const [alertModal, setAlertModal] = useState(null);
+
+  const showAlert = (config) => setAlertModal(config);
+  const closeAlert = () => setAlertModal(null);
 
   useEffect(() => {
     const loadAll = async () => {
@@ -261,37 +266,79 @@ export default function Admin() {
   const refreshBookings = () => adminApi.getBookings().then(r => setBookings(r.data));
 
   const handleSaveHotel = async (form) => {
-    if (modal.item) {
+    const isEdit = !!modal.item;
+    if (isEdit) {
       await adminApi.updateHotel(modal.item.id, form);
     } else {
       await adminApi.createHotel(form);
     }
     await refreshHotels();
+    showAlert({
+      type: 'success',
+      title: isEdit ? 'Hotel actualizado' : 'Hotel creado',
+      message: isEdit ? 'El hotel ha sido actualizado exitosamente.' : 'El hotel ha sido creado exitosamente.',
+      onConfirm: closeAlert,
+    });
   };
 
-  const handleDeleteHotel = async (id) => {
-    if (!window.confirm('¿Desactivar este hotel?')) return;
-    setDeleting(id);
-    await adminApi.deleteHotel(id);
-    await refreshHotels();
-    setDeleting(null);
+  const handleDeleteHotel = (id) => {
+    showAlert({
+      type: 'confirm',
+      title: '¿Desactivar hotel?',
+      message: 'El hotel quedará inactivo y no aparecerá en las búsquedas.',
+      onConfirm: async () => {
+        closeAlert();
+        setDeleting(id);
+        await adminApi.deleteHotel(id);
+        await refreshHotels();
+        setDeleting(null);
+        showAlert({
+          type: 'success',
+          title: 'Hotel eliminado',
+          message: 'El hotel ha sido desactivado exitosamente.',
+          onConfirm: closeAlert,
+        });
+      },
+      onCancel: closeAlert,
+    });
   };
 
   const handleSaveRoom = async (form) => {
-    if (modal.item) {
+    const isEdit = !!modal.item;
+    if (isEdit) {
       await adminApi.updateRoom(modal.item.id, form);
     } else {
       await adminApi.createRoom(form);
     }
     await refreshRooms();
+    showAlert({
+      type: 'success',
+      title: isEdit ? 'Habitación actualizada' : 'Habitación creada',
+      message: isEdit ? 'La habitación ha sido actualizada exitosamente.' : 'La habitación ha sido creada exitosamente.',
+      onConfirm: closeAlert,
+    });
   };
 
-  const handleDeleteRoom = async (id) => {
-    if (!window.confirm('¿Desactivar esta habitación?')) return;
-    setDeleting(id);
-    await adminApi.deleteRoom(id);
-    await refreshRooms();
-    setDeleting(null);
+  const handleDeleteRoom = (id) => {
+    showAlert({
+      type: 'confirm',
+      title: '¿Desactivar habitación?',
+      message: 'La habitación quedará no disponible para reservas.',
+      onConfirm: async () => {
+        closeAlert();
+        setDeleting(id);
+        await adminApi.deleteRoom(id);
+        await refreshRooms();
+        setDeleting(null);
+        showAlert({
+          type: 'success',
+          title: 'Habitación eliminada',
+          message: 'La habitación ha sido desactivada exitosamente.',
+          onConfirm: closeAlert,
+        });
+      },
+      onCancel: closeAlert,
+    });
   };
 
   const handleBookingStatus = async (id, status) => {
@@ -562,6 +609,17 @@ export default function Admin() {
           </>
         )}
       </div>
+
+      {/* Alert Modal */}
+      {alertModal && (
+        <AlertModal
+          type={alertModal.type}
+          title={alertModal.title}
+          message={alertModal.message}
+          onConfirm={alertModal.onConfirm}
+          onCancel={alertModal.onCancel}
+        />
+      )}
 
       {/* Modal */}
       {modal && (
