@@ -191,7 +191,7 @@ router.put('/rooms/:id', async (req, res) => {
         { name: 'price_per_night', type: sql.Decimal, value: Number.parseFloat(price_per_night) },
         { name: 'description', type: sql.NVarChar, value: description || null },
         { name: 'image_url', type: sql.NVarChar, value: image_url || null },
-        { name: 'is_available', type: sql.Bit, value: is_available !== undefined ? is_available : 1 }
+        { name: 'is_available', type: sql.Bit, value: is_available === undefined ? 1 : is_available }
       ]
     );
 

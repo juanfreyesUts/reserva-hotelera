@@ -76,7 +76,7 @@ HotelForm.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 function HotelForm({ hotel, onSave, onClose }) {
-  const { form, setForm, saving, error, handleChange, handleSubmit } = useAdminForm(
+  const { form, saving, error, handleChange, handleSubmit } = useAdminForm(
     {
       name: hotel?.name || '',
       description: hotel?.description || '',
@@ -117,7 +117,7 @@ function HotelForm({ hotel, onSave, onClose }) {
         <div>
           <label htmlFor="hotel-stars" className="block text-sm font-medium text-gray-700 mb-1">Estrellas *</label>
           <select id="hotel-stars" name="stars" value={form.stars} onChange={handleChange} required className="w-full input-field">
-            {[1,2,3,4,5].map(s => <option key={s} value={s}>{s} estrella{s !== 1 ? 's' : ''}</option>)}
+            {[1,2,3,4,5].map(s => <option key={s} value={s}>{s} estrella{s === 1 ? '' : 's'}</option>)}
           </select>
         </div>
         <div>
@@ -168,7 +168,7 @@ RoomForm.propTypes = {
   onClose: PropTypes.func.isRequired,
 };
 function RoomForm({ room, hotels, onSave, onClose }) {
-  const { form, setForm, saving, error, handleChange, handleSubmit } = useAdminForm(
+  const { form, saving, error, handleChange, handleSubmit } = useAdminForm(
     {
       hotel_id: room?.hotel_id || (hotels[0]?.id || ''),
       name: room?.name || '',

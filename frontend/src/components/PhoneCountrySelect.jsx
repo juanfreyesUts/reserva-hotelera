@@ -11,7 +11,6 @@ const options = PHONE_CODES.map(c => ({
   code: c.code,
 }));
 
-FlagImg.propTypes = { code: PropTypes.string.isRequired };
 const FlagImg = ({ code }) => (
   <img
     src={`https://flagcdn.com/w20/${code.toLowerCase()}.png`}
@@ -20,6 +19,7 @@ const FlagImg = ({ code }) => (
     style={{ width: 20, height: 'auto', borderRadius: 2, flexShrink: 0 }}
   />
 );
+FlagImg.propTypes = { code: PropTypes.string.isRequired };
 
 // Equivalente a templateResult / templateSelection de Select2
 const formatOptionLabel = (option, { context }) => {
