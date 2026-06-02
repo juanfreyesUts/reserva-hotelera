@@ -5,42 +5,43 @@ const { sql, query } = require('../config/db');
 // GET /api/hotels
 router.get('/', async (req, res) => {
   try {
-    const { city, checkin, checkout, guests, stars, minPrice, maxPrice, sort } = req.query;
+    const { city, stars, minPrice, maxPrice, sort } = req.query;
 
     let conditions = ['h.is_active = 1'];
-    let inputs = [];
+    let inputs = [];  // se extiende con spread para evitar push() consecutivos
 
     if (city) {
       conditions.push('(h.city LIKE @city OR h.neighborhood LIKE @city OR h.address LIKE @city)');
-      inputs.push({ name: 'city', type: sql.NVarChar, value: `%${city}%` });
+      inputs = [...inputs, { name: 'city', type: sql.NVarChar, value: `%${city}%` }];
     }
 
     if (stars) {
-      const starsArr = stars.split(',').map(s => parseInt(s)).filter(s => !isNaN(s));
+      const starsArr = stars.split(',').map(s => Number.parseInt(s, 10)).filter(Number.isFinite);
       if (starsArr.length > 0) {
-        const placeholders = starsArr.map((s, i) => {
-          inputs.push({ name: `stars${i}`, type: sql.Int, value: s });
-          return `@stars${i}`;
-        });
+        const starInputs = starsArr.map((s, i) => ({ name: `stars${i}`, type: sql.Int, value: s }));
+        const placeholders = starsArr.map((_, i) => `@stars${i}`);
+        inputs.push(...starInputs);
         conditions.push(`h.stars IN (${placeholders.join(',')})`);
       }
     }
 
     if (minPrice) {
       conditions.push('h.price_from >= @minPrice');
-      inputs.push({ name: 'minPrice', type: sql.Decimal, value: parseFloat(minPrice) });
+      inputs = [...inputs, { name: 'minPrice', type: sql.Decimal, value: Number.parseFloat(minPrice) }];
     }
 
     if (maxPrice) {
       conditions.push('h.price_from <= @maxPrice');
-      inputs.push({ name: 'maxPrice', type: sql.Decimal, value: parseFloat(maxPrice) });
+      inputs = [...inputs, { name: 'maxPrice', type: sql.Decimal, value: Number.parseFloat(maxPrice) }];
     }
 
-    let orderBy = 'h.rating DESC';
-    if (sort === 'price_asc') orderBy = 'h.price_from ASC';
-    else if (sort === 'price_desc') orderBy = 'h.price_from DESC';
-    else if (sort === 'stars') orderBy = 'h.stars DESC';
-    else if (sort === 'rating') orderBy = 'h.rating DESC';
+    const ORDER_MAP = {
+      price_asc:  'h.price_from ASC',
+      price_desc: 'h.price_from DESC',
+      stars:      'h.stars DESC',
+      rating:     'h.rating DESC',
+    };
+    const orderBy = ORDER_MAP[sort] || 'h.rating DESC';
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
@@ -55,7 +56,7 @@ router.get('/', async (req, res) => {
 
     res.json(result.recordset);
   } catch (err) {
-    console.error('Hotels list error:', err);
+    console.error('Hotels list error:', err.message);
     res.status(500).json({ error: 'Error al obtener hoteles' });
   }
 });
@@ -63,11 +64,15 @@ router.get('/', async (req, res) => {
 // GET /api/hotels/:id
 router.get('/:id', async (req, res) => {
   try {
+    const hotelId = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(hotelId) || hotelId <= 0) {
+      return res.status(400).json({ error: 'ID de hotel inválido' });
+    }
     const result = await query(
       `SELECT id, name, description, address, neighborhood, city,
               stars, rating, review_count, price_from, image_url, amenities
        FROM Hotels WHERE id = @id AND is_active = 1`,
-      [{ name: 'id', type: sql.Int, value: parseInt(req.params.id) }]
+      [{ name: 'id', type: sql.Int, value: hotelId }]
     );
 
     if (result.recordset.length === 0) {
@@ -76,7 +81,7 @@ router.get('/:id', async (req, res) => {
 
     res.json(result.recordset[0]);
   } catch (err) {
-    console.error('Hotel detail error:', err);
+    console.error('Hotel detail error:', err.message);
     res.status(500).json({ error: 'Error al obtener hotel' });
   }
 });

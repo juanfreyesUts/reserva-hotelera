@@ -7,7 +7,11 @@
       "Bash(node --check src/routes/hotels.js)",
       "Bash(node --check src/routes/rooms.js)",
       "Bash(node --check src/routes/bookings.js)",
-      "Bash(npx vite:*)"
+      "Bash(npx vite:*)",
+      "Bash(Get-ChildItem -Path \"c:\\\\proyectos-locales\\\\reserva-hotelera\" -Recurse -Depth 2)",
+      "Bash(Select-Object FullName, PSIsContainer)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(dir \"c:\\\\proyectos-locales\\\\reserva-hotelera\")"
     ]
   }
 }

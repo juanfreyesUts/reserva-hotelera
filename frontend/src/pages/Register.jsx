@@ -83,8 +83,9 @@ export default function Register() {
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
+              <label htmlFor="reg-name" className="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
               <input
+                id="reg-name"
                 type="text"
                 name="name"
                 value={form.name}
@@ -97,8 +98,9 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico *</label>
+              <label htmlFor="reg-email" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico *</label>
               <input
+                id="reg-email"
                 type="email"
                 name="email"
                 value={form.email}
@@ -112,10 +114,11 @@ export default function Register() {
 
             {/* Teléfono con selector de país */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+              <label htmlFor="reg-phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
               <div className="flex focus-within:ring-2 focus-within:ring-indigo-500 focus-within:ring-offset-0 rounded-lg">
                 <PhoneCountrySelect value={country} onChange={setCountry} />
                 <input
+                  id="reg-phone"
                   type="tel"
                   name="phone"
                   value={form.phone}
@@ -129,9 +132,10 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
+              <label htmlFor="reg-password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña *</label>
               <div className="relative">
                 <input
+                  id="reg-password"
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   value={form.password}
@@ -166,8 +170,9 @@ export default function Register() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña *</label>
+              <label htmlFor="reg-confirm" className="block text-sm font-medium text-gray-700 mb-1">Confirmar contraseña *</label>
               <input
+                id="reg-confirm"
                 type={showPassword ? 'text' : 'password'}
                 name="confirm"
                 value={form.confirm}

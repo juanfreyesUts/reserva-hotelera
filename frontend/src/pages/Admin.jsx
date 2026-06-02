@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { adminApi } from '../services/api';
+import StarRating from '../components/StarRating';
 import { formatDate } from '../utils/dateFormat';
+import { formatPrice } from '../utils/numberFormat';
 import AlertModal from '../components/AlertModal';
 
-function formatPrice(price) {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(price);
-}
-
+StatusBadge.propTypes = { status: PropTypes.string.isRequired };
 function StatusBadge({ status }) {
   const config = {
     confirmed: { label: 'Confirmada', cls: 'bg-green-100 text-green-700' },
@@ -18,6 +18,11 @@ function StatusBadge({ status }) {
 }
 
 // Modal component
+Modal.propTypes = {
+  title: PropTypes.string.isRequired,
+  onClose: PropTypes.func.isRequired,
+  children: PropTypes.node.isRequired,
+};
 function Modal({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -36,31 +41,18 @@ function Modal({ title, onClose, children }) {
   );
 }
 
-// Hotel Form
-function HotelForm({ hotel, onSave, onClose }) {
-  const [form, setForm] = useState({
-    name: hotel?.name || '',
-    description: hotel?.description || '',
-    address: hotel?.address || '',
-    neighborhood: hotel?.neighborhood || '',
-    city: hotel?.city || 'Bucaramanga',
-    stars: hotel?.stars || 3,
-    rating: hotel?.rating || 0,
-    review_count: hotel?.review_count || 0,
-    price_from: hotel?.price_from || '',
-    image_url: hotel?.image_url || '',
-    amenities: hotel?.amenities || '',
-    is_active: hotel?.is_active !== undefined ? hotel.is_active : 1
-  });
+// Hook compartido para manejo de formularios de admin
+function useAdminForm(initialState, onSave, onClose) {
+  const [form, setForm] = useState(initialState);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const handleChange = (e) => {
-    const val = e.target.type === 'checkbox' ? (e.target.checked ? 1 : 0) : e.target.value;
+  const handleChange = useCallback((e) => {
+    const val = e.target.type === 'checkbox' ? Number(e.target.checked) : e.target.value;
     setForm(prev => ({ ...prev, [e.target.name]: val }));
-  };
+  }, []);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     setSaving(true);
     setError('');
@@ -72,56 +64,85 @@ function HotelForm({ hotel, onSave, onClose }) {
     } finally {
       setSaving(false);
     }
-  };
+  }, [form, onSave, onClose]);
+
+  return { form, setForm, saving, error, handleChange, handleSubmit };
+}
+
+// Hotel Form
+HotelForm.propTypes = {
+  hotel: PropTypes.object,
+  onSave: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
+function HotelForm({ hotel, onSave, onClose }) {
+  const { form, setForm, saving, error, handleChange, handleSubmit } = useAdminForm(
+    {
+      name: hotel?.name || '',
+      description: hotel?.description || '',
+      address: hotel?.address || '',
+      neighborhood: hotel?.neighborhood || '',
+      city: hotel?.city || 'Bucaramanga',
+      stars: hotel?.stars || 3,
+      rating: hotel?.rating || 0,
+      review_count: hotel?.review_count || 0,
+      price_from: hotel?.price_from || '',
+      image_url: hotel?.image_url || '',
+      amenities: hotel?.amenities || '',
+      is_active: hotel?.is_active ?? 1,
+    },
+    onSave,
+    onClose
+  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
-          <input name="name" value={form.name} onChange={handleChange} required className="w-full input-field" />
+          <label htmlFor="hotel-name" className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+          <input id="hotel-name" name="name" value={form.name} onChange={handleChange} required className="w-full input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Ciudad *</label>
-          <input name="city" value={form.city} onChange={handleChange} required className="w-full input-field" />
+          <label htmlFor="hotel-city" className="block text-sm font-medium text-gray-700 mb-1">Ciudad *</label>
+          <input id="hotel-city" name="city" value={form.city} onChange={handleChange} required className="w-full input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Barrio/Sector</label>
-          <input name="neighborhood" value={form.neighborhood} onChange={handleChange} className="w-full input-field" />
+          <label htmlFor="hotel-neighborhood" className="block text-sm font-medium text-gray-700 mb-1">Barrio/Sector</label>
+          <input id="hotel-neighborhood" name="neighborhood" value={form.neighborhood} onChange={handleChange} className="w-full input-field" />
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
-          <input name="address" value={form.address} onChange={handleChange} className="w-full input-field" />
+          <label htmlFor="hotel-address" className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+          <input id="hotel-address" name="address" value={form.address} onChange={handleChange} className="w-full input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Estrellas *</label>
-          <select name="stars" value={form.stars} onChange={handleChange} required className="w-full input-field">
+          <label htmlFor="hotel-stars" className="block text-sm font-medium text-gray-700 mb-1">Estrellas *</label>
+          <select id="hotel-stars" name="stars" value={form.stars} onChange={handleChange} required className="w-full input-field">
             {[1,2,3,4,5].map(s => <option key={s} value={s}>{s} estrella{s !== 1 ? 's' : ''}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Precio desde (COP) *</label>
-          <input type="number" name="price_from" value={form.price_from} onChange={handleChange} required className="w-full input-field" />
+          <label htmlFor="hotel-price_from" className="block text-sm font-medium text-gray-700 mb-1">Precio desde (COP) *</label>
+          <input id="hotel-price_from" type="number" name="price_from" value={form.price_from} onChange={handleChange} required className="w-full input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Calificación (0-10)</label>
-          <input type="number" name="rating" value={form.rating} onChange={handleChange} min="0" max="10" step="0.1" className="w-full input-field" />
+          <label htmlFor="hotel-rating" className="block text-sm font-medium text-gray-700 mb-1">Calificación (0-10)</label>
+          <input id="hotel-rating" type="number" name="rating" value={form.rating} onChange={handleChange} min="0" max="10" step="0.1" className="w-full input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Número de reseñas</label>
-          <input type="number" name="review_count" value={form.review_count} onChange={handleChange} className="w-full input-field" />
+          <label htmlFor="hotel-review_count" className="block text-sm font-medium text-gray-700 mb-1">Número de reseñas</label>
+          <input id="hotel-review_count" type="number" name="review_count" value={form.review_count} onChange={handleChange} className="w-full input-field" />
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">URL de imagen</label>
-          <input name="image_url" value={form.image_url} onChange={handleChange} className="w-full input-field" placeholder="https://..." />
+          <label htmlFor="hotel-image_url" className="block text-sm font-medium text-gray-700 mb-1">URL de imagen</label>
+          <input id="hotel-image_url" name="image_url" value={form.image_url} onChange={handleChange} className="w-full input-field" placeholder="https://..." />
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Amenidades (separadas por coma)</label>
-          <input name="amenities" value={form.amenities} onChange={handleChange} className="w-full input-field" placeholder="WiFi,Piscina,Restaurante..." />
+          <label htmlFor="hotel-amenities" className="block text-sm font-medium text-gray-700 mb-1">Amenidades (separadas por coma)</label>
+          <input id="hotel-amenities" name="amenities" value={form.amenities} onChange={handleChange} className="w-full input-field" placeholder="WiFi,Piscina,Restaurante..." />
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-          <textarea name="description" value={form.description} onChange={handleChange} rows={3} className="w-full input-field resize-none" />
+          <label htmlFor="hotel-description" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+          <textarea id="hotel-description" name="description" value={form.description} onChange={handleChange} rows={3} className="w-full input-field resize-none" />
         </div>
         <div className="col-span-2 flex items-center gap-2">
           <input type="checkbox" name="is_active" id="hotel_active" checked={!!form.is_active} onChange={handleChange} className="w-4 h-4 text-indigo-600 rounded" />
@@ -140,55 +161,44 @@ function HotelForm({ hotel, onSave, onClose }) {
 }
 
 // Room Form
+RoomForm.propTypes = {
+  room: PropTypes.object,
+  hotels: PropTypes.arrayOf(PropTypes.object).isRequired,
+  onSave: PropTypes.func.isRequired,
+  onClose: PropTypes.func.isRequired,
+};
 function RoomForm({ room, hotels, onSave, onClose }) {
-  const [form, setForm] = useState({
-    hotel_id: room?.hotel_id || (hotels[0]?.id || ''),
-    name: room?.name || '',
-    type: room?.type || 'double',
-    capacity: room?.capacity || 2,
-    price_per_night: room?.price_per_night || '',
-    description: room?.description || '',
-    image_url: room?.image_url || '',
-    is_available: room?.is_available !== undefined ? room.is_available : 1
-  });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-
-  const handleChange = (e) => {
-    const val = e.target.type === 'checkbox' ? (e.target.checked ? 1 : 0) : e.target.value;
-    setForm(prev => ({ ...prev, [e.target.name]: val }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    setError('');
-    try {
-      await onSave(form);
-      onClose();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Error al guardar');
-    } finally {
-      setSaving(false);
-    }
-  };
+  const { form, setForm, saving, error, handleChange, handleSubmit } = useAdminForm(
+    {
+      hotel_id: room?.hotel_id || (hotels[0]?.id || ''),
+      name: room?.name || '',
+      type: room?.type || 'double',
+      capacity: room?.capacity || 2,
+      price_per_night: room?.price_per_night || '',
+      description: room?.description || '',
+      image_url: room?.image_url || '',
+      is_available: room?.is_available ?? 1,
+    },
+    onSave,
+    onClose
+  );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Hotel *</label>
-          <select name="hotel_id" value={form.hotel_id} onChange={handleChange} required className="w-full input-field">
+          <label htmlFor="room-hotel_id" className="block text-sm font-medium text-gray-700 mb-1">Hotel *</label>
+          <select id="room-hotel_id" name="hotel_id" value={form.hotel_id} onChange={handleChange} required className="w-full input-field">
             {hotels.map(h => <option key={h.id} value={h.id}>{h.name}</option>)}
           </select>
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de habitación *</label>
-          <input name="name" value={form.name} onChange={handleChange} required className="w-full input-field" />
+          <label htmlFor="room-name" className="block text-sm font-medium text-gray-700 mb-1">Nombre de habitación *</label>
+          <input id="room-name" name="name" value={form.name} onChange={handleChange} required className="w-full input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
-          <select name="type" value={form.type} onChange={handleChange} required className="w-full input-field">
+          <label htmlFor="room-type" className="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
+          <select id="room-type" name="type" value={form.type} onChange={handleChange} required className="w-full input-field">
             <option value="single">Individual</option>
             <option value="double">Doble</option>
             <option value="suite">Suite</option>
@@ -196,20 +206,20 @@ function RoomForm({ room, hotels, onSave, onClose }) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Capacidad *</label>
-          <input type="number" name="capacity" value={form.capacity} onChange={handleChange} min="1" max="10" required className="w-full input-field" />
+          <label htmlFor="room-capacity" className="block text-sm font-medium text-gray-700 mb-1">Capacidad *</label>
+          <input id="room-capacity" type="number" name="capacity" value={form.capacity} onChange={handleChange} min="1" max="10" required className="w-full input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Precio por noche (COP) *</label>
-          <input type="number" name="price_per_night" value={form.price_per_night} onChange={handleChange} required className="w-full input-field" />
+          <label htmlFor="room-price_per_night" className="block text-sm font-medium text-gray-700 mb-1">Precio por noche (COP) *</label>
+          <input id="room-price_per_night" type="number" name="price_per_night" value={form.price_per_night} onChange={handleChange} required className="w-full input-field" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">URL de imagen</label>
-          <input name="image_url" value={form.image_url} onChange={handleChange} className="w-full input-field" placeholder="https://..." />
+          <label htmlFor="room-image_url" className="block text-sm font-medium text-gray-700 mb-1">URL de imagen</label>
+          <input id="room-image_url" name="image_url" value={form.image_url} onChange={handleChange} className="w-full input-field" placeholder="https://..." />
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-          <textarea name="description" value={form.description} onChange={handleChange} rows={2} className="w-full input-field resize-none" />
+          <label htmlFor="room-description" className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+          <textarea id="room-description" name="description" value={form.description} onChange={handleChange} rows={2} className="w-full input-field resize-none" />
         </div>
         <div className="col-span-2 flex items-center gap-2">
           <input type="checkbox" name="is_available" id="room_avail" checked={!!form.is_available} onChange={handleChange} className="w-4 h-4 text-indigo-600 rounded" />
@@ -431,11 +441,7 @@ export default function Admin() {
                             <td className="px-4 py-3 text-gray-600">{hotel.city}</td>
                             <td className="px-4 py-3 text-center">
                               <div className="flex justify-center">
-                                {Array.from({ length: hotel.stars }).map((_, i) => (
-                                  <svg key={i} className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                  </svg>
-                                ))}
+                                <StarRating count={hotel.stars} />
                               </div>
                             </td>
                             <td className="px-4 py-3 text-right font-medium text-gray-800">{formatPrice(hotel.price_from)}</td>
@@ -624,10 +630,10 @@ export default function Admin() {
       {/* Modal */}
       {modal && (
         <Modal
-          title={modal.type === 'hotel'
-            ? (modal.item ? 'Editar hotel' : 'Nuevo hotel')
-            : (modal.item ? 'Editar habitación' : 'Nueva habitación')
-          }
+          title={(() => {
+            if (modal.type === 'hotel') return modal.item ? 'Editar hotel' : 'Nuevo hotel';
+            return modal.item ? 'Editar habitación' : 'Nueva habitación';
+          })()}
           onClose={() => setModal(null)}
         >
           {modal.type === 'hotel' ? (

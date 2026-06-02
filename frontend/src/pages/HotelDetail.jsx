@@ -2,20 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import RoomCard from '../components/RoomCard';
 import SearchBar from '../components/SearchBar';
+import StarRating from '../components/StarRating';
+
+const RATING_LABELS = [
+  { min: 9, label: 'Excelente' },
+  { min: 8, label: 'Muy bueno' },
+  { min: 0, label: 'Bueno'     },
+];
+function hotelRatingLabel(rating) {
+  return (RATING_LABELS.find(r => rating >= r.min) ?? RATING_LABELS.at(-1)).label;
+}
 import { hotelsApi, roomsApi } from '../services/api';
 import { formatDate } from '../utils/dateFormat';
-
-function Stars({ count }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <svg key={i} className={`w-5 h-5 ${i < count ? 'text-yellow-400' : 'text-gray-200'}`} fill="currentColor" viewBox="0 0 20 20">
-          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-        </svg>
-      ))}
-    </div>
-  );
-}
 
 const AMENITY_ICONS = {
   'WiFi': '📶',
@@ -67,10 +65,6 @@ export default function HotelDetail() {
       .finally(() => setLoadingRooms(false));
   }, [id, checkin, checkout]);
 
-  const nights = checkin && checkout
-    ? Math.ceil((new Date(checkout) - new Date(checkin)) / 86400000)
-    : null;
-
   const filteredRooms = rooms.filter(room => room.capacity >= Number(guests));
 
   if (loadingHotel) {
@@ -93,6 +87,42 @@ export default function HotelDetail() {
   }
 
   const amenitiesList = hotel.amenities ? hotel.amenities.split(',').map(a => a.trim()) : [];
+
+  let roomsContent;
+  if (loadingRooms) {
+    roomsContent = (
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-white rounded-xl border border-gray-200 h-36 animate-pulse" />
+        ))}
+      </div>
+    );
+  } else if (filteredRooms.length === 0) {
+    roomsContent = (
+      <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
+        <div className="text-4xl mb-3">😔</div>
+        <p className="text-gray-600 font-semibold">No hay habitaciones disponibles</p>
+        {checkin && checkout && (
+          <p className="text-gray-400 text-sm mt-1">
+            Para las fechas {formatDate(checkin)} - {formatDate(checkout)} y {guests} huéspedes.
+            <br />Intenta con otras fechas o menos huéspedes.
+          </p>
+        )}
+      </div>
+    );
+  } else {
+    roomsContent = (
+      <div className="space-y-4">
+        {filteredRooms.map(room => (
+          <RoomCard
+            key={room.id}
+            room={room}
+            searchParams={{ checkin, checkout, guests }}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -119,7 +149,7 @@ export default function HotelDetail() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6">
-              <Stars count={hotel.stars} />
+              <StarRating count={hotel.stars} size="w-5 h-5" />
               <h1 className="text-3xl font-extrabold text-white mt-1">{hotel.name}</h1>
               <p className="text-gray-300 flex items-center gap-1 mt-1">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -136,11 +166,11 @@ export default function HotelDetail() {
               {hotel.rating > 0 && (
                 <div className="flex items-center gap-2">
                   <span className="bg-indigo-600 text-white font-bold text-lg px-3 py-1 rounded-xl">
-                    {parseFloat(hotel.rating).toFixed(1)}
+                    {Number.parseFloat(hotel.rating).toFixed(1)}
                   </span>
                   <div>
                     <p className="font-semibold text-gray-800">
-                      {hotel.rating >= 9 ? 'Excelente' : hotel.rating >= 8 ? 'Muy bueno' : 'Bueno'}
+                      {hotelRatingLabel(hotel.rating)}
                     </p>
                     <p className="text-xs text-gray-500">{hotel.review_count?.toLocaleString('es-CO')} reseñas</p>
                   </div>
@@ -178,34 +208,7 @@ export default function HotelDetail() {
               {loadingRooms && <span className="ml-2 text-sm text-gray-400 font-normal">Cargando...</span>}
             </h2>
 
-            {loadingRooms ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="bg-white rounded-xl border border-gray-200 h-36 animate-pulse" />
-                ))}
-              </div>
-            ) : filteredRooms.length === 0 ? (
-              <div className="bg-white rounded-xl border border-gray-200 p-8 text-center">
-                <div className="text-4xl mb-3">😔</div>
-                <p className="text-gray-600 font-semibold">No hay habitaciones disponibles</p>
-                {checkin && checkout && (
-                  <p className="text-gray-400 text-sm mt-1">
-                    Para las fechas {formatDate(checkin)} - {formatDate(checkout)} y {guests} huéspedes.
-                    <br />Intenta con otras fechas o menos huéspedes.
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredRooms.map(room => (
-                  <RoomCard
-                    key={room.id}
-                    room={room}
-                    searchParams={{ checkin, checkout, guests }}
-                  />
-                ))}
-              </div>
-            )}
+            {roomsContent}
           </div>
 
           {/* Amenities Sidebar */}

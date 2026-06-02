@@ -4,12 +4,13 @@ require('dotenv').config();
 
 const app = express();
 
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
-  credentials: true
-}));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Ocultar header X-Powered-By (Security Hotspot: version disclosure)
+app.disable('x-powered-by');
+
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173,http://localhost:3000').split(',');
+app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Routes
 app.use('/api/auth', require('./src/routes/auth'));
@@ -30,7 +31,7 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('[GlobalError]', err.message);
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 

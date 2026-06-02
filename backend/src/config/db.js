@@ -1,14 +1,16 @@
 const sql = require('mssql');
 require('dotenv').config();
 
+const isProd = process.env.NODE_ENV === 'production';
+
 const config = {
   server: process.env.DB_SERVER || 'localhost',
   database: process.env.DB_DATABASE || 'ReservaHotelera',
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   options: {
-    encrypt: false,
-    trustServerCertificate: true,
+    encrypt: isProd ? true : (process.env.DB_ENCRYPT !== 'false'),
+    trustServerCertificate: !isProd && process.env.DB_TRUST_SERVER_CERTIFICATE !== 'false',
     enableArithAbort: true
   }
 };

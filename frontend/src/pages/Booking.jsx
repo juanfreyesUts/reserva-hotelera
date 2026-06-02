@@ -4,10 +4,8 @@ import { roomsApi, bookingsApi, hotelsApi } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import { formatDate } from '../utils/dateFormat';
-
-function formatPrice(price) {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(price);
-}
+import { formatPrice } from '../utils/numberFormat';
+import StarRating from '../components/StarRating';
 
 export default function Booking() {
   const [searchParams] = useSearchParams();
@@ -52,8 +50,9 @@ export default function Booking() {
       .finally(() => setLoading(false));
   }, [roomId, hotelId, navigate]);
 
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
   const nights = checkin && checkout
-    ? Math.ceil((new Date(checkout) - new Date(checkin)) / 86400000)
+    ? Math.ceil((new Date(checkout) - new Date(checkin)) / MS_PER_DAY)
     : 0;
 
   const totalPrice = room ? room.price_per_night * nights : 0;
@@ -79,11 +78,11 @@ export default function Booking() {
     setSubmitting(true);
     try {
       const res = await bookingsApi.create({
-        room_id: parseInt(roomId),
-        hotel_id: parseInt(hotelId),
+        room_id: Number.parseInt(roomId, 10),
+        hotel_id: Number.parseInt(hotelId, 10),
         check_in: checkin,
         check_out: checkout,
-        guests: parseInt(form.guests),
+        guests: Number.parseInt(form.guests, 10),
         guest_name: form.guest_name,
         guest_email: form.guest_email,
         guest_phone: form.guest_phone,
@@ -144,13 +143,14 @@ export default function Booking() {
             {/* Guest info */}
             <div className="bg-white rounded-2xl shadow-sm p-6">
               <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="bg-indigo-100 text-indigo-700 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold">1</span>
+                <span className="bg-indigo-100 text-indigo-700 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold">1</span>{' '}
                 Datos del huésped
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
+                  <label htmlFor="booking-guest_name" className="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
                   <input
+                    id="booking-guest_name"
                     type="text"
                     name="guest_name"
                     value={form.guest_name}
@@ -161,8 +161,9 @@ export default function Booking() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico *</label>
+                  <label htmlFor="booking-guest_email" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico *</label>
                   <input
+                    id="booking-guest_email"
                     type="email"
                     name="guest_email"
                     value={form.guest_email}
@@ -173,8 +174,9 @@ export default function Booking() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                  <label htmlFor="booking-guest_phone" className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
                   <input
+                    id="booking-guest_phone"
                     type="tel"
                     name="guest_phone"
                     value={form.guest_phone}
@@ -184,8 +186,9 @@ export default function Booking() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de huéspedes *</label>
+                  <label htmlFor="booking-guests" className="block text-sm font-medium text-gray-700 mb-1">Número de huéspedes *</label>
                   <select
+                    id="booking-guests"
                     name="guests"
                     value={form.guests}
                     onChange={handleChange}
@@ -203,7 +206,7 @@ export default function Booking() {
             {/* Stay details */}
             <div className="bg-white rounded-2xl shadow-sm p-6">
               <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="bg-indigo-100 text-indigo-700 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold">2</span>
+                <span className="bg-indigo-100 text-indigo-700 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold">2</span>{' '}
                 Fechas de estadía
               </h2>
               <div className="grid grid-cols-2 gap-4">
@@ -226,7 +229,7 @@ export default function Booking() {
             {/* Special requests */}
             <div className="bg-white rounded-2xl shadow-sm p-6">
               <h2 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="bg-indigo-100 text-indigo-700 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold">3</span>
+                <span className="bg-indigo-100 text-indigo-700 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold">3</span>{' '}
                 Solicitudes especiales
                 <span className="text-xs text-gray-400 font-normal ml-1">(opcional)</span>
               </h2>
@@ -283,11 +286,7 @@ export default function Booking() {
                     <p className="font-semibold text-gray-800 text-sm">{hotel.name}</p>
                     <p className="text-xs text-gray-500">{hotel.neighborhood}, {hotel.city}</p>
                     <div className="flex mt-1">
-                      {Array.from({ length: hotel.stars || 0 }).map((_, i) => (
-                        <svg key={i} className="w-3 h-3 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                      ))}
+                      <StarRating count={hotel.stars || 0} size="w-3 h-3" />
                     </div>
                   </div>
                 </div>

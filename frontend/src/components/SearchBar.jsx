@@ -1,6 +1,20 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { useAlert } from '../context/AlertContext';
+
+SearchBar.propTypes = {
+  initialValues: PropTypes.shape({
+    city: PropTypes.string,
+    checkin: PropTypes.string,
+    checkout: PropTypes.string,
+    guests: PropTypes.string,
+  }),
+  compact: PropTypes.bool,
+  isDestino: PropTypes.bool,
+  titleSearch: PropTypes.string,
+  onFilter: PropTypes.func,
+};
 
 export default function SearchBar({ initialValues = {}, compact = false, isDestino = true, titleSearch = 'Buscar Hoteles', onFilter }) {
   const navigate = useNavigate();
@@ -29,11 +43,12 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
 
   if (compact) {
     return (
-      <form onSubmit={handleSearch} className={`flex flex-wrap gap-2 items-end bg-white p-3 rounded-xl shadow-sm border border-gray-200 ${!isDestino ? 'w-fit' : 'w-full'}`}>
+      <form onSubmit={handleSearch} className={`flex flex-wrap gap-2 items-end bg-white p-3 rounded-xl shadow-sm border border-gray-200 ${isDestino ? 'w-full' : 'w-fit'}`}>
         {isDestino && (
           <div className="flex-1 min-w-[140px]">
-            <label className="block text-xs text-gray-500 mb-1">Destino</label>
+            <label htmlFor="sb-city" className="block text-xs text-gray-500 mb-1">Destino</label>
             <input
+              id="sb-city"
               type="text"
               value={city}
               onChange={e => setCity(e.target.value)}
@@ -43,8 +58,9 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
           </div>
         )}
         <div className="min-w-[130px]">
-          <label className="block text-xs text-gray-500 mb-1">Entrada</label>
+          <label htmlFor="sb-checkin" className="block text-xs text-gray-500 mb-1">Entrada</label>
           <input
+            id="sb-checkin"
             type="date"
             value={checkin}
             required
@@ -54,8 +70,9 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
           />
         </div>
         <div className="min-w-[130px]">
-          <label className="block text-xs text-gray-500 mb-1">Salida</label>
+          <label htmlFor="sb-checkout" className="block text-xs text-gray-500 mb-1">Salida</label>
           <input
+            id="sb-checkout"
             type="date"
             value={checkout}
             required
@@ -65,8 +82,9 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
           />
         </div>
         <div className="min-w-[80px]">
-          <label className="block text-xs text-gray-500 mb-1">Huéspedes</label>
+          <label htmlFor="sb-guests" className="block text-xs text-gray-500 mb-1">Huéspedes</label>
           <select
+            id="sb-guests"
             value={guests}
             required
             onChange={e => setGuests(e.target.value)}
@@ -87,7 +105,7 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
       <div className="bg-white rounded-xl p-1 flex flex-wrap md:flex-nowrap gap-0">
         {/* Destination */}
         <div className="flex-1 min-w-[200px] border-b md:border-b-0 md:border-r border-gray-200 px-4 py-3">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+          <label htmlFor="sbf-city" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
             Destino
           </label>
           <div className="flex items-center gap-2">
@@ -96,6 +114,7 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             <input
+              id="sbf-city"
               type="text"
               value={city}
               onChange={e => setCity(e.target.value)}
@@ -108,7 +127,7 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
 
         {/* Check-in */}
         <div className="flex-1 min-w-[150px] border-b md:border-b-0 md:border-r border-gray-200 px-4 py-3">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+          <label htmlFor="sbf-checkin" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
             Llegada
           </label>
           <div className="flex items-center gap-2">
@@ -116,6 +135,7 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <input
+              id="sbf-checkin"
               type="date"
               value={checkin}
               min={today}
@@ -128,7 +148,7 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
 
         {/* Check-out */}
         <div className="flex-1 min-w-[150px] border-b md:border-b-0 md:border-r border-gray-200 px-4 py-3">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+          <label htmlFor="sbf-checkout" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
             Salida
           </label>
           <div className="flex items-center gap-2">
@@ -136,6 +156,7 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
             <input
+              id="sbf-checkout"
               type="date"
               value={checkout}
               min={checkin || today}
@@ -148,7 +169,7 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
 
         {/* Guests */}
         <div className="flex-1 min-w-[130px] px-4 py-3">
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+          <label htmlFor="sbf-guests" className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
             Huéspedes
           </label>
           <div className="flex items-center gap-2">
@@ -156,6 +177,7 @@ export default function SearchBar({ initialValues = {}, compact = false, isDesti
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
             <select
+              id="sbf-guests"
               value={guests}
               onChange={e => setGuests(e.target.value)}
               className="w-full text-gray-800 text-sm font-medium focus:outline-none bg-transparent"

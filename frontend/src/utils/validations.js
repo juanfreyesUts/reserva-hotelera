@@ -3,7 +3,7 @@
  * Use this to sanitize phone/numeric inputs.
  */
 export function onlyDigits(value) {
-  return String(value).replace(/\D/g, '');
+  return String(value).replaceAll(/\D/g, '');
 }
 
 /**
@@ -23,7 +23,13 @@ export function validatePhone(phone) {
  */
 export function validateEmail(email) {
   if (!email) return 'El correo electrónico es requerido.';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  const atIndex = email.indexOf('@');
+  if (atIndex < 1 || atIndex !== email.lastIndexOf('@')) {
+    return 'Ingresa un correo electrónico válido.';
+  }
+  const domain = email.slice(atIndex + 1);
+  const dotIndex = domain.lastIndexOf('.');
+  if (dotIndex < 1 || dotIndex === domain.length - 1) {
     return 'Ingresa un correo electrónico válido.';
   }
   return null;
@@ -57,7 +63,7 @@ export function passwordStrength(password) {
   let score = 0;
   if (password.length >= 8)          score++;
   if (/[A-Z]/.test(password))        score++;
-  if (/[0-9]/.test(password))        score++;
+  if (/\d/.test(password))            score++;
   if (/[^A-Za-z0-9]/.test(password)) score++;
   if (score <= 1) return { label: 'Débil',   color: 'bg-red-500',    width: '25%' };
   if (score === 2) return { label: 'Regular', color: 'bg-yellow-500', width: '50%' };

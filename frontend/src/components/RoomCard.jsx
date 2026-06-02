@@ -1,7 +1,9 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
+import { formatPrice } from '../utils/numberFormat';
 
 const TYPE_LABELS = {
   single: 'Individual',
@@ -17,14 +19,34 @@ const TYPE_COLORS = {
   deluxe: 'bg-orange-100 text-orange-700'
 };
 
-export function formatPrice(price) {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(price);
-}
+RoomCard.propTypes = {
+  room: PropTypes.shape({
+    id: PropTypes.number.isRequired,
+    hotel_id: PropTypes.number,
+    name: PropTypes.string.isRequired,
+    type: PropTypes.string,
+    capacity: PropTypes.number,
+    price_per_night: PropTypes.number.isRequired,
+    description: PropTypes.string,
+    image_url: PropTypes.string,
+  }).isRequired,
+  searchParams: PropTypes.shape({
+    checkin: PropTypes.string,
+    checkout: PropTypes.string,
+    guests: PropTypes.string,
+  }),
+};
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export default function RoomCard({ room, searchParams = {} }) {
   const { user } = useAuth();
   const { error: showError } = useAlert();
   const navigate = useNavigate();
+
+  const stayNights = (searchParams.checkin && searchParams.checkout)
+    ? Math.ceil((new Date(searchParams.checkout) - new Date(searchParams.checkin)) / MS_PER_DAY)
+    : 0;
 
   const handleBook = async () => {
     if (!searchParams.checkin || !searchParams.checkout) {
@@ -88,14 +110,11 @@ export default function RoomCard({ room, searchParams = {} }) {
             <div>
               <div className="text-xl font-bold text-gray-800">{formatPrice(room.price_per_night)}</div>
               <span className="text-xs text-gray-400">por noche</span>
-              {searchParams.checkin && searchParams.checkout && (() => {
-                const nights = Math.ceil((new Date(searchParams.checkout) - new Date(searchParams.checkin)) / 86400000);
-                if (nights > 0) return (
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {nights} {nights === 1 ? 'noche' : 'noches'}: {formatPrice(room.price_per_night * nights)}
-                  </p>
-                );
-              })()}
+              {stayNights > 0 && (
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {stayNights} {stayNights === 1 ? 'noche' : 'noches'}: {formatPrice(room.price_per_night * stayNights)}
+                </p>
+              )}
             </div>
             <button
               onClick={handleBook}

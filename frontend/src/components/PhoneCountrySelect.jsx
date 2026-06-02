@@ -1,3 +1,5 @@
+import React from 'react';
+import PropTypes from 'prop-types';
 import Select from 'react-select';
 import { PHONE_CODES } from '../utils/phoneCodes';
 
@@ -9,6 +11,7 @@ const options = PHONE_CODES.map(c => ({
   code: c.code,
 }));
 
+FlagImg.propTypes = { code: PropTypes.string.isRequired };
 const FlagImg = ({ code }) => (
   <img
     src={`https://flagcdn.com/w20/${code.toLowerCase()}.png`}
@@ -79,14 +82,19 @@ const selectStyles = {
     padding: 0,
     maxHeight: 210,
   }),
-  option: (base, { isSelected, isFocused }) => ({
-    ...base,
-    backgroundColor: isSelected ? '#eef2ff' : isFocused ? '#f5f3ff' : 'white',
-    color: isSelected ? '#4338ca' : '#374151',
-    cursor: 'pointer',
-    padding: '8px 12px',
-    fontWeight: isSelected ? 600 : 400,
-  }),
+  option: (base, { isSelected, isFocused }) => {
+    let backgroundColor = 'white';
+    if (isSelected) backgroundColor = '#eef2ff';
+    else if (isFocused) backgroundColor = '#f5f3ff';
+    return {
+      ...base,
+      backgroundColor,
+      color: isSelected ? '#4338ca' : '#374151',
+      cursor: 'pointer',
+      padding: '8px 12px',
+      fontWeight: isSelected ? 600 : 400,
+    };
+  },
   input: (base) => ({
     ...base,
     fontSize: 14,
@@ -100,6 +108,11 @@ const selectStyles = {
     ...base,
     fontSize: 14,
   }),
+};
+
+PhoneCountrySelect.propTypes = {
+  value: PropTypes.shape({ code: PropTypes.string.isRequired }).isRequired,
+  onChange: PropTypes.func.isRequired,
 };
 
 export default function PhoneCountrySelect({ value, onChange }) {

@@ -35,18 +35,19 @@ export default function SearchResults() {
       const res = await hotelsApi.search(params);
       let results = res.data;
 
-      // Client-side amenity filter
+      // Client-side amenity filter — Set.has() es O(1) vs includes() O(n)
       if (filters.amenities.length > 0) {
+        const selectedSet = new Set(filters.amenities);
         results = results.filter(h => {
           if (!h.amenities) return false;
-          const hotelAmenities = h.amenities.split(',').map(a => a.trim());
-          return filters.amenities.every(a => hotelAmenities.includes(a));
+          const hotelSet = new Set(h.amenities.split(',').map(a => a.trim()));
+          return [...selectedSet].every(a => hotelSet.has(a));
         });
       }
 
       setHotels(results);
     } catch (err) {
-      console.error('Search error:', err);
+      console.error('Search error:', err.message);
     } finally {
       setLoading(false);
     }
@@ -56,9 +57,55 @@ export default function SearchResults() {
     fetchHotels();
   }, [fetchHotels]);
 
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
   const nights = checkin && checkout
-    ? Math.ceil((new Date(checkout) - new Date(checkin)) / 86400000)
+    ? Math.ceil((new Date(checkout) - new Date(checkin)) / MS_PER_DAY)
     : null;
+
+  let hotelsContent;
+  if (loading) {
+    hotelsContent = (
+      <div className="space-y-4">
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="bg-white rounded-xl shadow-md h-52 animate-pulse flex">
+            <div className="w-72 bg-gray-200 rounded-l-xl" />
+            <div className="flex-1 p-5 space-y-3">
+              <div className="h-5 bg-gray-200 rounded w-3/4" />
+              <div className="h-4 bg-gray-200 rounded w-1/2" />
+              <div className="h-4 bg-gray-200 rounded w-2/3" />
+              <div className="h-4 bg-gray-200 rounded w-1/3" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  } else if (hotels.length === 0) {
+    hotelsContent = (
+      <div className="bg-white rounded-xl p-12 text-center shadow-sm">
+        <div className="text-6xl mb-4">🔍</div>
+        <h3 className="text-xl font-bold text-gray-700 mb-2">No se encontraron hoteles</h3>
+        <p className="text-gray-500 mb-4">Intenta con otros filtros o cambia las fechas de búsqueda.</p>
+        <button
+          onClick={() => setFilters({ stars: [], minPrice: '', maxPrice: '', amenities: [] })}
+          className="btn-primary"
+        >
+          Limpiar filtros
+        </button>
+      </div>
+    );
+  } else {
+    hotelsContent = (
+      <div className="space-y-4">
+        {hotels.map(hotel => (
+          <HotelCard
+            key={hotel.id}
+            hotel={hotel}
+            searchParams={{ checkin, checkout, guests }}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -83,9 +130,9 @@ export default function SearchResults() {
                 </>
               )}
             </h1>
-            {nights && nights > 0 && (
+            {Boolean(nights) && nights > 0 && (
               <p className="text-sm text-gray-500">
-                {formatDate(checkin)} — {formatDate(checkout)} · {nights} {nights === 1 ? 'noche' : 'noches'} · {guests} {parseInt(guests) === 1 ? 'huésped' : 'huéspedes'}
+                {formatDate(checkin)} — {formatDate(checkout)} · {nights} {nights === 1 ? 'noche' : 'noches'} · {guests} {Number.parseInt(guests, 10) === 1 ? 'huésped' : 'huéspedes'}
               </p>
             )}
           </div>
@@ -107,8 +154,9 @@ export default function SearchResults() {
             </button>
             {/* Sort */}
             <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 whitespace-nowrap">Ordenar por:</label>
+              <label htmlFor="search-sort" className="text-sm text-gray-600 whitespace-nowrap">Ordenar por:</label>
               <select
+                id="search-sort"
                 value={sort}
                 onChange={e => setSort(e.target.value)}
                 className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -130,43 +178,7 @@ export default function SearchResults() {
 
           {/* Hotel list */}
           <div className="flex-1 min-w-0">
-            {loading ? (
-              <div className="space-y-4">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="bg-white rounded-xl shadow-md h-52 animate-pulse flex">
-                    <div className="w-72 bg-gray-200 rounded-l-xl" />
-                    <div className="flex-1 p-5 space-y-3">
-                      <div className="h-5 bg-gray-200 rounded w-3/4" />
-                      <div className="h-4 bg-gray-200 rounded w-1/2" />
-                      <div className="h-4 bg-gray-200 rounded w-2/3" />
-                      <div className="h-4 bg-gray-200 rounded w-1/3" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : hotels.length === 0 ? (
-              <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-                <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-xl font-bold text-gray-700 mb-2">No se encontraron hoteles</h3>
-                <p className="text-gray-500 mb-4">Intenta con otros filtros o cambia las fechas de búsqueda.</p>
-                <button
-                  onClick={() => setFilters({ stars: [], minPrice: '', maxPrice: '', amenities: [] })}
-                  className="btn-primary"
-                >
-                  Limpiar filtros
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {hotels.map(hotel => (
-                  <HotelCard
-                    key={hotel.id}
-                    hotel={hotel}
-                    searchParams={{ checkin, checkout, guests }}
-                  />
-                ))}
-              </div>
-            )}
+            {hotelsContent}
           </div>
         </div>
       </div>

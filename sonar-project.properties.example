@@ -1,0 +1,37 @@
+# =============================================================================
+# Copia este archivo como sonar-project.properties y completa el token.
+# NUNCA commitees sonar-project.properties con el token real.
+#
+# Cómo obtener el token:
+#   1. Abre SonarQube en http://localhost:9000
+#   2. Mi cuenta → Security → Generate Token
+#   3. Pégalo en sonar.token (o pásalo por CLI: sonar-scanner -Dsonar.token=xxx)
+# =============================================================================
+
+sonar.projectKey=reserva-hotelera
+sonar.projectName=StayHub - Reserva Hotelera
+sonar.projectVersion=1.0.0
+
+sonar.host.url=http://localhost:9000
+sonar.token=REEMPLAZA_CON_TU_TOKEN
+
+sonar.sourceEncoding=UTF-8
+sonar.javascript.file.suffixes=.js,.jsx,.ts,.tsx
+
+sonar.sources=frontend/src,backend/src,backend/server.js
+
+sonar.exclusions=\
+  **/node_modules/**,\
+  **/dist/**,\
+  **/build/**,\
+  **/.env,\
+  **/.env.*,\
+  **/coverage/**,\
+  backend/src/scripts/setup.js,\
+  **/*.min.js,\
+  **/*.min.css
+
+sonar.cpd.exclusions=**/node_modules/**,**/dist/**
+
+sonar.log.level=INFO
+sonar.scanner.socketTimeout=300

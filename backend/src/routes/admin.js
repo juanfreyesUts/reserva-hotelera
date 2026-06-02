@@ -18,7 +18,7 @@ router.get('/hotels', async (req, res) => {
     );
     res.json(result.recordset);
   } catch (err) {
-    console.error('Admin hotels error:', err);
+    console.error('Admin hotels error:', err.message);
     res.status(500).json({ error: 'Error al obtener hoteles' });
   }
 });
@@ -41,17 +41,17 @@ router.post('/hotels', async (req, res) => {
         { name: 'address', type: sql.NVarChar, value: address || null },
         { name: 'neighborhood', type: sql.NVarChar, value: neighborhood || null },
         { name: 'city', type: sql.NVarChar, value: city },
-        { name: 'stars', type: sql.Int, value: parseInt(stars) },
-        { name: 'rating', type: sql.Decimal, value: parseFloat(rating) || 0 },
-        { name: 'review_count', type: sql.Int, value: parseInt(review_count) || 0 },
-        { name: 'price_from', type: sql.Decimal, value: parseFloat(price_from) },
+        { name: 'stars', type: sql.Int, value: Number.parseInt(stars, 10) },
+        { name: 'rating', type: sql.Decimal, value: Number.parseFloat(rating) || 0 },
+        { name: 'review_count', type: sql.Int, value: Number.parseInt(review_count, 10) || 0 },
+        { name: 'price_from', type: sql.Decimal, value: Number.parseFloat(price_from) },
         { name: 'image_url', type: sql.NVarChar, value: image_url || null },
         { name: 'amenities', type: sql.NVarChar, value: amenities || null }
       ]
     );
     res.status(201).json(result.recordset[0]);
   } catch (err) {
-    console.error('Admin create hotel error:', err);
+    console.error('Admin create hotel error:', err.message);
     res.status(500).json({ error: 'Error al crear hotel' });
   }
 });
@@ -59,6 +59,9 @@ router.post('/hotels', async (req, res) => {
 // PUT /api/admin/hotels/:id
 router.put('/hotels/:id', async (req, res) => {
   try {
+    const hotelId = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(hotelId) || hotelId <= 0) return res.status(400).json({ error: 'ID de hotel inválido' });
+
     const { name, description, address, neighborhood, city, stars, rating, review_count, price_from, image_url, amenities, is_active } = req.body;
 
     const result = await query(
@@ -70,19 +73,19 @@ router.put('/hotels/:id', async (req, res) => {
        OUTPUT INSERTED.*
        WHERE id = @id`,
       [
-        { name: 'id', type: sql.Int, value: parseInt(req.params.id) },
+        { name: 'id', type: sql.Int, value: hotelId },
         { name: 'name', type: sql.NVarChar, value: name },
         { name: 'description', type: sql.NVarChar, value: description || null },
         { name: 'address', type: sql.NVarChar, value: address || null },
         { name: 'neighborhood', type: sql.NVarChar, value: neighborhood || null },
         { name: 'city', type: sql.NVarChar, value: city },
-        { name: 'stars', type: sql.Int, value: parseInt(stars) },
-        { name: 'rating', type: sql.Decimal, value: parseFloat(rating) || 0 },
-        { name: 'review_count', type: sql.Int, value: parseInt(review_count) || 0 },
-        { name: 'price_from', type: sql.Decimal, value: parseFloat(price_from) },
+        { name: 'stars', type: sql.Int, value: Number.parseInt(stars, 10) },
+        { name: 'rating', type: sql.Decimal, value: Number.parseFloat(rating) || 0 },
+        { name: 'review_count', type: sql.Int, value: Number.parseInt(review_count, 10) || 0 },
+        { name: 'price_from', type: sql.Decimal, value: Number.parseFloat(price_from) },
         { name: 'image_url', type: sql.NVarChar, value: image_url || null },
         { name: 'amenities', type: sql.NVarChar, value: amenities || null },
-        { name: 'is_active', type: sql.Bit, value: is_active !== undefined ? is_active : 1 }
+        { name: 'is_active', type: sql.Bit, value: is_active ?? 1 }
       ]
     );
 
@@ -91,7 +94,7 @@ router.put('/hotels/:id', async (req, res) => {
     }
     res.json(result.recordset[0]);
   } catch (err) {
-    console.error('Admin update hotel error:', err);
+    console.error('Admin update hotel error:', err.message);
     res.status(500).json({ error: 'Error al actualizar hotel' });
   }
 });
@@ -99,13 +102,19 @@ router.put('/hotels/:id', async (req, res) => {
 // DELETE /api/admin/hotels/:id
 router.delete('/hotels/:id', async (req, res) => {
   try {
-    await query(
-      'UPDATE Hotels SET is_active = 0 WHERE id = @id',
-      [{ name: 'id', type: sql.Int, value: parseInt(req.params.id) }]
+    const hotelId = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(hotelId) || hotelId <= 0) return res.status(400).json({ error: 'ID de hotel inválido' });
+
+    const result = await query(
+      'UPDATE Hotels SET is_active = 0 OUTPUT INSERTED.id WHERE id = @id',
+      [{ name: 'id', type: sql.Int, value: hotelId }]
     );
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ error: 'Hotel no encontrado' });
+    }
     res.json({ message: 'Hotel desactivado exitosamente' });
   } catch (err) {
-    console.error('Admin delete hotel error:', err);
+    console.error('Admin delete hotel error:', err.message);
     res.status(500).json({ error: 'Error al eliminar hotel' });
   }
 });
@@ -124,7 +133,7 @@ router.get('/rooms', async (req, res) => {
     );
     res.json(result.recordset);
   } catch (err) {
-    console.error('Admin rooms error:', err);
+    console.error('Admin rooms error:', err.message);
     res.status(500).json({ error: 'Error al obtener habitaciones' });
   }
 });
@@ -142,18 +151,18 @@ router.post('/rooms', async (req, res) => {
        OUTPUT INSERTED.*
        VALUES (@hotel_id, @name, @type, @capacity, @price_per_night, @description, @image_url, 1)`,
       [
-        { name: 'hotel_id', type: sql.Int, value: parseInt(hotel_id) },
+        { name: 'hotel_id', type: sql.Int, value: Number.parseInt(hotel_id, 10) },
         { name: 'name', type: sql.NVarChar, value: name },
         { name: 'type', type: sql.NVarChar, value: type },
-        { name: 'capacity', type: sql.Int, value: parseInt(capacity) },
-        { name: 'price_per_night', type: sql.Decimal, value: parseFloat(price_per_night) },
+        { name: 'capacity', type: sql.Int, value: Number.parseInt(capacity, 10) },
+        { name: 'price_per_night', type: sql.Decimal, value: Number.parseFloat(price_per_night) },
         { name: 'description', type: sql.NVarChar, value: description || null },
         { name: 'image_url', type: sql.NVarChar, value: image_url || null }
       ]
     );
     res.status(201).json(result.recordset[0]);
   } catch (err) {
-    console.error('Admin create room error:', err);
+    console.error('Admin create room error:', err.message);
     res.status(500).json({ error: 'Error al crear habitación' });
   }
 });
@@ -161,6 +170,9 @@ router.post('/rooms', async (req, res) => {
 // PUT /api/admin/rooms/:id
 router.put('/rooms/:id', async (req, res) => {
   try {
+    const roomId = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(roomId) || roomId <= 0) return res.status(400).json({ error: 'ID de habitación inválido' });
+
     const { hotel_id, name, type, capacity, price_per_night, description, image_url, is_available } = req.body;
 
     const result = await query(
@@ -171,12 +183,12 @@ router.put('/rooms/:id', async (req, res) => {
        OUTPUT INSERTED.*
        WHERE id = @id`,
       [
-        { name: 'id', type: sql.Int, value: parseInt(req.params.id) },
-        { name: 'hotel_id', type: sql.Int, value: parseInt(hotel_id) },
+        { name: 'id', type: sql.Int, value: roomId },
+        { name: 'hotel_id', type: sql.Int, value: Number.parseInt(hotel_id, 10) },
         { name: 'name', type: sql.NVarChar, value: name },
         { name: 'type', type: sql.NVarChar, value: type },
-        { name: 'capacity', type: sql.Int, value: parseInt(capacity) },
-        { name: 'price_per_night', type: sql.Decimal, value: parseFloat(price_per_night) },
+        { name: 'capacity', type: sql.Int, value: Number.parseInt(capacity, 10) },
+        { name: 'price_per_night', type: sql.Decimal, value: Number.parseFloat(price_per_night) },
         { name: 'description', type: sql.NVarChar, value: description || null },
         { name: 'image_url', type: sql.NVarChar, value: image_url || null },
         { name: 'is_available', type: sql.Bit, value: is_available !== undefined ? is_available : 1 }
@@ -188,7 +200,7 @@ router.put('/rooms/:id', async (req, res) => {
     }
     res.json(result.recordset[0]);
   } catch (err) {
-    console.error('Admin update room error:', err);
+    console.error('Admin update room error:', err.message);
     res.status(500).json({ error: 'Error al actualizar habitación' });
   }
 });
@@ -196,13 +208,19 @@ router.put('/rooms/:id', async (req, res) => {
 // DELETE /api/admin/rooms/:id
 router.delete('/rooms/:id', async (req, res) => {
   try {
-    await query(
-      'UPDATE Rooms SET is_available = 0 WHERE id = @id',
-      [{ name: 'id', type: sql.Int, value: parseInt(req.params.id) }]
+    const roomId = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(roomId) || roomId <= 0) return res.status(400).json({ error: 'ID de habitación inválido' });
+
+    const result = await query(
+      'UPDATE Rooms SET is_available = 0 OUTPUT INSERTED.id WHERE id = @id',
+      [{ name: 'id', type: sql.Int, value: roomId }]
     );
+    if (result.recordset.length === 0) {
+      return res.status(404).json({ error: 'Habitación no encontrada' });
+    }
     res.json({ message: 'Habitación desactivada exitosamente' });
   } catch (err) {
-    console.error('Admin delete room error:', err);
+    console.error('Admin delete room error:', err.message);
     res.status(500).json({ error: 'Error al eliminar habitación' });
   }
 });
@@ -226,7 +244,7 @@ router.get('/bookings', async (req, res) => {
     );
     res.json(result.recordset);
   } catch (err) {
-    console.error('Admin bookings error:', err);
+    console.error('Admin bookings error:', err.message);
     res.status(500).json({ error: 'Error al obtener reservas' });
   }
 });
@@ -234,6 +252,9 @@ router.get('/bookings', async (req, res) => {
 // PUT /api/admin/bookings/:id/status
 router.put('/bookings/:id/status', async (req, res) => {
   try {
+    const bookingId = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(bookingId) || bookingId <= 0) return res.status(400).json({ error: 'ID de reserva inválido' });
+
     const { status } = req.body;
     if (!['pending', 'confirmed', 'cancelled'].includes(status)) {
       return res.status(400).json({ error: 'Estado inválido' });
@@ -242,7 +263,7 @@ router.put('/bookings/:id/status', async (req, res) => {
     const result = await query(
       "UPDATE Bookings SET status = @status OUTPUT INSERTED.id, INSERTED.status WHERE id = @id",
       [
-        { name: 'id', type: sql.Int, value: parseInt(req.params.id) },
+        { name: 'id', type: sql.Int, value: bookingId },
         { name: 'status', type: sql.NVarChar, value: status }
       ]
     );
@@ -252,7 +273,7 @@ router.put('/bookings/:id/status', async (req, res) => {
     }
     res.json(result.recordset[0]);
   } catch (err) {
-    console.error('Admin update booking status error:', err);
+    console.error('Admin update booking status error:', err.message);
     res.status(500).json({ error: 'Error al actualizar estado de reserva' });
   }
 });

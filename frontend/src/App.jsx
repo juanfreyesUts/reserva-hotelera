@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AlertProvider } from './context/AlertContext';
@@ -14,6 +15,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
 
+ProtectedRoute.propTypes = { children: PropTypes.node.isRequired };
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return (
@@ -25,6 +27,7 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+AdminRoute.propTypes = { children: PropTypes.node.isRequired };
 function AdminRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return (

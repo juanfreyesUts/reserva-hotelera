@@ -1,6 +1,6 @@
-projectKey=reserva-hotelera
+projectKey=reserva-hotelera-v2
 serverUrl=http://localhost:9000
 serverVersion=26.1.0.118079
-dashboardUrl=http://localhost:9000/dashboard?id=reserva-hotelera
-ceTaskId=8a212cee-f148-4c16-b9d8-0092f1fc7daf
-ceTaskUrl=http://localhost:9000/api/ce/task?id=8a212cee-f148-4c16-b9d8-0092f1fc7daf
+dashboardUrl=http://localhost:9000/dashboard?id=reserva-hotelera-v2
+ceTaskId=55e4c3f5-a96e-4d83-9b18-5512996f26a4
+ceTaskUrl=http://localhost:9000/api/ce/task?id=55e4c3f5-a96e-4d83-9b18-5512996f26a4

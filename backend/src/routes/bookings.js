@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { sql, query } = require('../config/db');
+const { sql, query, getPool } = require('../config/db');
 const { authenticate } = require('../middleware/auth');
 
 // POST /api/bookings
@@ -11,6 +11,13 @@ router.post('/', authenticate, async (req, res) => {
     if (!room_id || !hotel_id || !check_in || !check_out || !guests || !guest_name || !guest_email) {
       return res.status(400).json({ error: 'Faltan campos requeridos' });
     }
+
+    const parsedRoomId = Number.parseInt(room_id, 10);
+    const parsedHotelId = Number.parseInt(hotel_id, 10);
+    const parsedGuests = Number.parseInt(guests, 10);
+    if (Number.isNaN(parsedRoomId) || parsedRoomId <= 0) return res.status(400).json({ error: 'ID de habitación inválido' });
+    if (Number.isNaN(parsedHotelId) || parsedHotelId <= 0) return res.status(400).json({ error: 'ID de hotel inválido' });
+    if (Number.isNaN(parsedGuests) || parsedGuests <= 0) return res.status(400).json({ error: 'Número de huéspedes inválido' });
 
     const checkIn = new Date(check_in);
     const checkOut = new Date(check_out);
@@ -23,7 +30,7 @@ router.post('/', authenticate, async (req, res) => {
     // Get room info
     const roomResult = await query(
       'SELECT id, hotel_id, price_per_night, capacity, is_available FROM Rooms WHERE id = @id',
-      [{ name: 'id', type: sql.Int, value: parseInt(room_id) }]
+      [{ name: 'id', type: sql.Int, value: parsedRoomId }]
     );
     if (roomResult.recordset.length === 0) {
       return res.status(404).json({ error: 'Habitación no encontrada' });
@@ -34,51 +41,61 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(400).json({ error: 'Habitación no disponible' });
     }
 
-    if (guests > room.capacity) {
+    if (parsedGuests > room.capacity) {
       return res.status(400).json({ error: `La habitación tiene capacidad máxima para ${room.capacity} personas` });
-    }
-
-    // Check availability
-    const conflict = await query(
-      `SELECT id FROM Bookings
-       WHERE room_id = @room_id
-         AND status IN ('confirmed', 'pending')
-         AND check_in < @check_out
-         AND check_out > @check_in`,
-      [
-        { name: 'room_id', type: sql.Int, value: parseInt(room_id) },
-        { name: 'check_in', type: sql.Date, value: check_in },
-        { name: 'check_out', type: sql.Date, value: check_out }
-      ]
-    );
-    if (conflict.recordset.length > 0) {
-      return res.status(400).json({ error: 'La habitación no está disponible para las fechas seleccionadas' });
     }
 
     const total_price = room.price_per_night * nights;
 
-    const result = await query(
-      `INSERT INTO Bookings (user_id, room_id, hotel_id, check_in, check_out, guests, total_price,
-                             status, guest_name, guest_email, guest_phone, special_requests)
-       OUTPUT INSERTED.id, INSERTED.status, INSERTED.total_price, INSERTED.created_at
-       VALUES (@user_id, @room_id, @hotel_id, @check_in, @check_out, @guests, @total_price,
-               'confirmed', @guest_name, @guest_email, @guest_phone, @special_requests)`,
-      [
-        { name: 'user_id', type: sql.Int, value: req.user.id },
-        { name: 'room_id', type: sql.Int, value: parseInt(room_id) },
-        { name: 'hotel_id', type: sql.Int, value: parseInt(hotel_id) },
-        { name: 'check_in', type: sql.Date, value: check_in },
-        { name: 'check_out', type: sql.Date, value: check_out },
-        { name: 'guests', type: sql.Int, value: parseInt(guests) },
-        { name: 'total_price', type: sql.Decimal, value: total_price },
-        { name: 'guest_name', type: sql.NVarChar, value: guest_name },
-        { name: 'guest_email', type: sql.NVarChar, value: guest_email },
-        { name: 'guest_phone', type: sql.NVarChar, value: guest_phone || null },
-        { name: 'special_requests', type: sql.NVarChar, value: special_requests || null }
-      ]
-    );
+    // Transacción serializable para evitar race condition de doble reserva
+    const pool = await getPool();
+    const transaction = new sql.Transaction(pool);
+    await transaction.begin(sql.ISOLATION_LEVEL.SERIALIZABLE);
 
-    const booking = result.recordset[0];
+    let booking;
+    try {
+      const conflictReq = transaction.request();
+      conflictReq.input('room_id', sql.Int, parsedRoomId);
+      conflictReq.input('check_in', sql.Date, check_in);
+      conflictReq.input('check_out', sql.Date, check_out);
+      const conflict = await conflictReq.query(
+        `SELECT id FROM Bookings
+         WHERE room_id = @room_id
+           AND status IN ('confirmed', 'pending')
+           AND check_in < @check_out
+           AND check_out > @check_in`
+      );
+      if (conflict.recordset.length > 0) {
+        await transaction.rollback();
+        return res.status(400).json({ error: 'La habitación no está disponible para las fechas seleccionadas' });
+      }
+
+      const insertReq = transaction.request();
+      insertReq.input('user_id', sql.Int, req.user.id);
+      insertReq.input('room_id', sql.Int, parsedRoomId);
+      insertReq.input('hotel_id', sql.Int, parsedHotelId);
+      insertReq.input('check_in', sql.Date, check_in);
+      insertReq.input('check_out', sql.Date, check_out);
+      insertReq.input('guests', sql.Int, parsedGuests);
+      insertReq.input('total_price', sql.Decimal, total_price);
+      insertReq.input('guest_name', sql.NVarChar, guest_name);
+      insertReq.input('guest_email', sql.NVarChar, guest_email);
+      insertReq.input('guest_phone', sql.NVarChar, guest_phone || null);
+      insertReq.input('special_requests', sql.NVarChar, special_requests || null);
+      const result = await insertReq.query(
+        `INSERT INTO Bookings (user_id, room_id, hotel_id, check_in, check_out, guests, total_price,
+                               status, guest_name, guest_email, guest_phone, special_requests)
+         OUTPUT INSERTED.id, INSERTED.status, INSERTED.total_price, INSERTED.created_at
+         VALUES (@user_id, @room_id, @hotel_id, @check_in, @check_out, @guests, @total_price,
+                 'confirmed', @guest_name, @guest_email, @guest_phone, @special_requests)`
+      );
+
+      await transaction.commit();
+      booking = result.recordset[0];
+    } catch (error) {
+      await transaction.rollback();
+      throw error;
+    }
     res.status(201).json({
       ...booking,
       nights,
@@ -91,7 +108,7 @@ router.post('/', authenticate, async (req, res) => {
       guest_email
     });
   } catch (err) {
-    console.error('Create booking error:', err);
+    console.error('Create booking error:', err.message);
     res.status(500).json({ error: 'Error al crear reserva' });
   }
 });
@@ -113,7 +130,7 @@ router.get('/my', authenticate, async (req, res) => {
     );
     res.json(result.recordset);
   } catch (err) {
-    console.error('My bookings error:', err);
+    console.error('My bookings error:', err.message);
     res.status(500).json({ error: 'Error al obtener reservas' });
   }
 });
@@ -121,7 +138,10 @@ router.get('/my', authenticate, async (req, res) => {
 // PUT /api/bookings/:id/cancel
 router.put('/:id/cancel', authenticate, async (req, res) => {
   try {
-    const bookingId = parseInt(req.params.id);
+    const bookingId = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(bookingId) || bookingId <= 0) {
+      return res.status(400).json({ error: 'ID de reserva inválido' });
+    }
 
     const existing = await query(
       'SELECT id, user_id, status FROM Bookings WHERE id = @id',
@@ -133,7 +153,7 @@ router.put('/:id/cancel', authenticate, async (req, res) => {
     }
 
     const booking = existing.recordset[0];
-    if (booking.user_id !== req.user.id && req.user.role !== 'admin') {
+    if (booking.user_id !== req.user.id && req.user?.role !== 'admin') {
       return res.status(403).json({ error: 'No autorizado' });
     }
 
@@ -148,7 +168,7 @@ router.put('/:id/cancel', authenticate, async (req, res) => {
 
     res.json({ message: 'Reserva cancelada exitosamente' });
   } catch (err) {
-    console.error('Cancel booking error:', err);
+    console.error('Cancel booking error:', err.message);
     res.status(500).json({ error: 'Error al cancelar reserva' });
   }
 });

@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import AlertModal from '../components/AlertModal';
 
 const AlertContext = createContext(null);
 
+AlertProvider.propTypes = { children: PropTypes.node.isRequired };
 export function AlertProvider({ children }) {
   const [modal, setModal] = useState(null);
 
@@ -34,8 +36,13 @@ export function AlertProvider({ children }) {
       });
     }), []);
 
+  const value = useMemo(
+    () => ({ alert, success, error, confirm }),
+    [alert, success, error, confirm]
+  );
+
   return (
-    <AlertContext.Provider value={{ alert, success, error, confirm }}>
+    <AlertContext.Provider value={value}>
       {children}
       {modal && <AlertModal {...modal} />}
     </AlertContext.Provider>

@@ -155,9 +155,16 @@ export default function Navbar() {
 
       {/* Overlay to close menu */}
       {menuOpen && (
-        <div className="fixed inset-0 z-[-1]" onClick={() => setMenuOpen(false)} />
+        <button
+          type="button"
+          className="fixed inset-0 z-[-1] w-full h-full cursor-default bg-transparent border-0"
+          onClick={() => setMenuOpen(false)}
+          onKeyDown={(e) => { if (e.key === 'Escape') setMenuOpen(false); }}
+          aria-label="Cerrar menú"
+        />
       )}
     </nav>
     </>
   );
 }
+

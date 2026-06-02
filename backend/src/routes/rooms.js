@@ -5,7 +5,10 @@ const { sql, query } = require('../config/db');
 // GET /api/rooms/hotel/:hotelId?checkin=&checkout=
 router.get('/hotel/:hotelId', async (req, res) => {
   try {
-    const { hotelId } = req.params;
+    const parsedHotelId = Number.parseInt(req.params.hotelId, 10);
+    if (Number.isNaN(parsedHotelId) || parsedHotelId <= 0) {
+      return res.status(400).json({ error: 'ID de hotel inválido' });
+    }
     const { checkin, checkout } = req.query;
 
     let queryStr = `
@@ -15,7 +18,7 @@ router.get('/hotel/:hotelId', async (req, res) => {
       WHERE r.hotel_id = @hotelId AND r.is_available = 1
     `;
 
-    const inputs = [{ name: 'hotelId', type: sql.Int, value: parseInt(hotelId) }];
+    const inputs = [{ name: 'hotelId', type: sql.Int, value: parsedHotelId }];
 
     // Exclude rooms that have confirmed/pending bookings overlapping the dates
     if (checkin && checkout) {
@@ -28,8 +31,10 @@ router.get('/hotel/:hotelId', async (req, res) => {
             AND b.check_out > @checkin
         )
       `;
-      inputs.push({ name: 'checkin', type: sql.Date, value: checkin });
-      inputs.push({ name: 'checkout', type: sql.Date, value: checkout });
+      inputs.push(
+        { name: 'checkin', type: sql.Date, value: checkin },
+        { name: 'checkout', type: sql.Date, value: checkout }
+      );
     }
 
     queryStr += ' ORDER BY r.price_per_night ASC';
@@ -37,7 +42,7 @@ router.get('/hotel/:hotelId', async (req, res) => {
     const result = await query(queryStr, inputs);
     res.json(result.recordset);
   } catch (err) {
-    console.error('Rooms by hotel error:', err);
+    console.error('Rooms by hotel error:', err.message);
     res.status(500).json({ error: 'Error al obtener habitaciones' });
   }
 });
@@ -45,6 +50,10 @@ router.get('/hotel/:hotelId', async (req, res) => {
 // GET /api/rooms/:id
 router.get('/:id', async (req, res) => {
   try {
+    const roomId = Number.parseInt(req.params.id, 10);
+    if (Number.isNaN(roomId) || roomId <= 0) {
+      return res.status(400).json({ error: 'ID de habitación inválido' });
+    }
     const result = await query(
       `SELECT r.id, r.hotel_id, r.name, r.type, r.capacity, r.price_per_night,
               r.description, r.image_url, r.is_available,
@@ -52,7 +61,7 @@ router.get('/:id', async (req, res) => {
        FROM Rooms r
        JOIN Hotels h ON r.hotel_id = h.id
        WHERE r.id = @id`,
-      [{ name: 'id', type: sql.Int, value: parseInt(req.params.id) }]
+      [{ name: 'id', type: sql.Int, value: roomId }]
     );
 
     if (result.recordset.length === 0) {
@@ -61,7 +70,7 @@ router.get('/:id', async (req, res) => {
 
     res.json(result.recordset[0]);
   } catch (err) {
-    console.error('Room detail error:', err);
+    console.error('Room detail error:', err.message);
     res.status(500).json({ error: 'Error al obtener habitación' });
   }
 });

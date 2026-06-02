@@ -1,10 +1,7 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { formatDate } from '../utils/dateFormat';
-
-function formatPrice(price) {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(price);
-}
+import { formatPrice } from '../utils/numberFormat';
 
 export default function BookingConfirmation() {
   const { state } = useLocation();
@@ -81,7 +78,7 @@ export default function BookingConfirmation() {
               </div>
               <div className="bg-gray-50 rounded-xl p-4">
                 <p className="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Huéspedes</p>
-                <p className="font-bold text-gray-800">{booking.guests} {parseInt(booking.guests) === 1 ? 'persona' : 'personas'}</p>
+                <p className="font-bold text-gray-800">{booking.guests} {Number.parseInt(booking.guests, 10) === 1 ? 'persona' : 'personas'}</p>
               </div>
             </div>
 

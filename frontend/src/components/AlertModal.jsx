@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import PropTypes from 'prop-types';
 
 const TYPES = {
   success: {
@@ -47,24 +48,38 @@ const TYPES = {
   },
 };
 
+AlertModal.propTypes = {
+  type: PropTypes.string.isRequired,
+  title: PropTypes.string.isRequired,
+  message: PropTypes.string.isRequired,
+  onConfirm: PropTypes.func.isRequired,
+  onCancel: PropTypes.func,
+};
+
 export default function AlertModal({ type, title, message, onConfirm, onCancel }) {
   const cfg = TYPES[type] || TYPES.alert;
+  const handleBackdropKey = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') (onCancel || onConfirm)();
+  };
 
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape' && onCancel) onCancel();
       if (e.key === 'Enter') onConfirm();
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    globalThis.addEventListener('keydown', onKey);
+    return () => globalThis.removeEventListener('keydown', onKey);
   }, [onConfirm, onCancel]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      <button
+        type="button"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm w-full cursor-default"
         onClick={onCancel || onConfirm}
+        onKeyDown={handleBackdropKey}
+        aria-label="Cerrar"
       />
 
       {/* Modal */}
@@ -74,7 +89,8 @@ export default function AlertModal({ type, title, message, onConfirm, onCancel }
         <h3 className="text-lg font-bold text-gray-800 mb-2">{title}</h3>
         <p className="text-gray-500 text-sm mb-6 leading-relaxed">{message}</p>
 
-        <div className={`flex gap-3 ${type === 'confirm' ? 'justify-center' : 'justify-center'}`}>
+        {/* S3923: ambas ramas del ternario eran idénticas — simplificado a clase fija */}
+        <div className="flex gap-3 justify-center">
           {type === 'confirm' && (
             <button
               onClick={onCancel}

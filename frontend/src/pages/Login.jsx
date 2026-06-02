@@ -30,8 +30,8 @@ export default function Login() {
   };
 
   const fillDemo = (type) => {
-    if (type === 'admin') setForm({ email: 'admin@hoteleria.com', password: 'Admin123!' });
-    else setForm({ email: 'carlos@email.com', password: 'User123!' });
+    if (type === 'admin') setForm({ email: import.meta.env.VITE_DEMO_ADMIN_EMAIL || '', password: import.meta.env.VITE_DEMO_ADMIN_PASS || '' });
+    else setForm({ email: import.meta.env.VITE_DEMO_USER_EMAIL || '', password: import.meta.env.VITE_DEMO_USER_PASS || '' });
   };
 
   return (
@@ -51,33 +51,36 @@ export default function Login() {
           <p className="text-gray-500 text-sm mt-1">Inicia sesión para gestionar tus reservas</p>
         </div>
 
-        {/* Demo buttons */}
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-6">
-          <p className="text-xs text-yellow-700 font-semibold mb-2">Cuentas de demostración:</p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => fillDemo('admin')}
-              className="flex-1 text-xs bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-semibold py-1.5 px-3 rounded-lg transition-colors"
-            >
-              Administrador
-            </button>
-            <button
-              type="button"
-              onClick={() => fillDemo('user')}
-              className="flex-1 text-xs bg-white hover:bg-gray-50 text-gray-700 font-semibold py-1.5 px-3 rounded-lg border border-gray-300 transition-colors"
-            >
-              Usuario normal
-            </button>
+        {/* Demo buttons — solo visibles en desarrollo */}
+        {import.meta.env.DEV && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-6">
+            <p className="text-xs text-yellow-700 font-semibold mb-2">Cuentas de demostración:</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => fillDemo('admin')}
+                className="flex-1 text-xs bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-semibold py-1.5 px-3 rounded-lg transition-colors"
+              >
+                Administrador
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemo('user')}
+                className="flex-1 text-xs bg-white hover:bg-gray-50 text-gray-700 font-semibold py-1.5 px-3 rounded-lg border border-gray-300 transition-colors"
+              >
+                Usuario normal
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Form */}
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
+              <label htmlFor="login-email" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico</label>
               <input
+                id="login-email"
                 type="email"
                 name="email"
                 value={form.email}
@@ -90,9 +93,10 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
+              <label htmlFor="login-password" className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
               <div className="relative">
                 <input
+                  id="login-password"
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   value={form.password}
